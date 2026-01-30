@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentsy — Internal Docs</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #0a0a0a; color: #e5e5e5; min-height: 100vh; }
+.container { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+h1.page-title { font-size: 2rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
+.subtitle { color: #888; margin-bottom: 40px; font-size: 0.95rem; }
+.doc-grid { display: grid; gap: 16px; }
+.doc-card { background: #161616; border: 1px solid #262626; border-radius: 12px; padding: 24px; text-decoration: none; color: inherit; transition: all 0.2s; cursor: pointer; }
+.doc-card:hover { border-color: #C9A96E; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+.doc-card h3 { font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+.doc-card p { color: #888; font-size: 0.875rem; line-height: 1.5; }
+.badge { font-size: 0.7rem; background: #C9A96E22; color: #C9A96E; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+.back { display: inline-flex; align-items: center; gap: 6px; color: #888; text-decoration: none; font-size: 0.875rem; margin-bottom: 24px; transition: color 0.2s; }
+.back:hover { color: #C9A96E; }
+#viewer { display: none; }
+#viewer.active { display: block; }
+#doc-list.hidden { display: none; }
+
+/* Markdown content styling */
+.md-content { background: #161616; border: 1px solid #262626; border-radius: 12px; padding: 32px; line-height: 1.7; font-size: 0.925rem; }
+.md-content h1 { font-size: 1.6rem; margin: 0 0 16px; border-bottom: 1px solid #262626; padding-bottom: 12px; color: #fff; font-weight: 700; }
+.md-content h2 { font-size: 1.3rem; margin: 32px 0 12px; color: #C9A96E; font-weight: 600; }
+.md-content h3 { font-size: 1.05rem; margin: 24px 0 8px; color: #ddd; font-weight: 600; }
+.md-content h4 { font-size: 0.95rem; margin: 16px 0 6px; color: #ccc; font-weight: 600; }
+.md-content p { margin: 8px 0; color: #bbb; }
+.md-content ul, .md-content ol { margin: 8px 0 8px 24px; color: #bbb; }
+.md-content li { margin: 4px 0; }
+.md-content li ul, .md-content li ol { margin: 4px 0 4px 20px; }
+.md-content strong { color: #fff; }
+.md-content em { color: #A3B18A; font-style: italic; }
+.md-content code { background: #1e1e1e; color: #C9A96E; padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+.md-content pre { background: #1e1e1e; border: 1px solid #333; border-radius: 8px; padding: 16px; overflow-x: auto; margin: 12px 0; }
+.md-content pre code { background: none; padding: 0; color: #ddd; display: block; white-space: pre; font-size: 0.82em; line-height: 1.6; }
+.md-content blockquote { border-left: 3px solid #C9A96E; padding: 8px 16px; margin: 12px 0; color: #999; background: #1a1a1a; border-radius: 0 8px 8px 0; }
+.md-content blockquote p { color: #999; }
+.md-content table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.85rem; }
+.md-content thead th { background: #1e1e1e; color: #C9A96E; text-align: left; padding: 10px 12px; border: 1px solid #333; font-weight: 600; }
+.md-content tbody td { padding: 8px 12px; border: 1px solid #262626; color: #bbb; }
+.md-content tbody tr:hover td { background: #1a1a1a; }
+.md-content hr { border: none; border-top: 1px solid #262626; margin: 28px 0; }
+.md-content a { color: #C9A96E; text-decoration: none; }
+.md-content a:hover { text-decoration: underline; }
+.md-content img { max-width: 100%; border-radius: 8px; }
+.md-content input[type="checkbox"] { margin-right: 6px; }
+@media (max-width: 640px) {
+  .container { padding: 24px 16px; }
+  .md-content { padding: 20px; }
+  .md-content pre { padding: 12px; font-size: 0.8em; }
+  .md-content table { font-size: 0.75rem; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div id="doc-list">
+    <h1 class="page-title">📋 Agentsy Docs</h1>
+    <p class="subtitle">Internal strategy documents for Agentsy — AI Agent for Creators</p>
+    <div class="doc-grid">
+      <div class="doc-card" onclick="loadDoc('architecture')">
+        <h3>🏗️ Architecture Design <span class="badge">NEW</span></h3>
+        <p>Full technical architecture — components, infrastructure, data model, security, cost model, and development roadmap.</p>
+      </div>
+      <div class="doc-card" onclick="loadDoc('competitive-analysis')">
+        <h3>📊 Competitive Analysis</h3>
+        <p>Market landscape covering ChatGPT, Claude, Jasper, Notion AI, Rabbit, MultiOn, Lindy + pricing strategy + go-to-market plan.</p>
+      </div>
+      <div class="doc-card" onclick="loadDoc('outreach-leads')">
+        <h3>📋 Outreach Leads</h3>
+        <p>20 target segments with platform, reach, priority, and outreach channel. YouTube creators, Twitter builders, newsletter writers, and more.</p>
+      </div>
+      <a class="doc-card" href="/" style="text-decoration:none">
+        <h3>🚀 Landing Page</h3>
+        <p>The live Agentsy landing page with waitlist signup.</p>
+      </a>
+    </div>
+  </div>
+
+  <div id="viewer">
+    <a href="#" class="back" onclick="closeDoc(); return false;">← Back to docs</a>
+    <div id="md-content" class="md-content"></div>
+  </div>
+</div>
+
+<script>
+const cache = {};
+
+async function loadDoc(name) {
+  if (!cache[name]) {
+    const ext = name === 'outreach-leads' ? '.csv' : '.md';
+    const res = await fetch('/docs/' + name + ext);
+    cache[name] = await res.text();
+  }
+
+  const el = document.getElementById('md-content');
+
+  if (name === 'outreach-leads') {
+    el.innerHTML = renderCSV(cache[name]);
+  } else {
+    el.innerHTML = marked.parse(cache[name]);
+  }
+
+  document.getElementById('doc-list').classList.add('hidden');
+  document.getElementById('viewer').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function closeDoc() {
+  document.getElementById('doc-list').classList.remove('hidden');
+  document.getElementById('viewer').classList.remove('active');
+}
+
+function renderCSV(csv) {
+  const lines = csv.trim().split('\n');
+  let html = '<h1>📋 Outreach Leads</h1><p>Target segments for Agentsy creator outreach.</p><br>';
+  html += '<div style="overflow-x:auto"><table><thead><tr>';
+  const headers = parseCSVLine(lines[0]);
+  headers.forEach(h => { html += '<th>' + h + '</th>'; });
+  html += '</tr></thead><tbody>';
+  for (let i = 1; i < lines.length; i++) {
+    const cells = parseCSVLine(lines[i]);
+    html += '<tr>';
+    cells.forEach(c => { html += '<td>' + c + '</td>'; });
+    html += '</tr>';
+  }
+  html += '</tbody></table></div>';
+  return html;
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQuotes = !inQuotes; }
+    else if (ch === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+    else { current += ch; }
+  }
+  result.push(current.trim());
+  return result;
+}
+</script>
+</body>
+</html>
