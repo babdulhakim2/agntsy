@@ -71,13 +71,12 @@ export function BottomSheet({ memory, onClose, onDelete }: BottomSheetProps) {
     if (!dragging.current || !sheetRef.current) return
     dragging.current = false
     sheetRef.current.style.transition = ''
+    sheetRef.current.style.transform = '' // Clear inline style, let CSS classes handle it
     const dy = e.changedTouches[0].clientY - dragStartY.current
     if (dy > 100) {
       onClose()
-    } else {
-      sheetRef.current.style.transform = isOpen ? 'translate(-50%, 0)' : ''
     }
-  }, [onClose, isOpen])
+  }, [onClose])
 
   return (
     <>
@@ -99,16 +98,13 @@ export function BottomSheet({ memory, onClose, onDelete }: BottomSheetProps) {
           'bottom-0 left-1/2 w-full max-w-[600px] h-[85dvh] rounded-t-[20px]',
           // Desktop: right panel
           'sm:left-auto sm:right-0 sm:top-0 sm:bottom-0 sm:w-[380px] sm:max-w-[65%] sm:!h-full sm:rounded-none sm:shadow-[-8px_0_40px_rgba(0,0,0,0.12)]',
+          // Transition
+          'transition-transform duration-[350ms] ease-[cubic-bezier(0.16,1,0.3,1)]',
+          // Transforms: mobile uses -translate-x-1/2 for centering, desktop resets it
           isOpen
-            ? 'sm:translate-x-0 translate-x-0'
-            : 'sm:translate-x-full',
+            ? '-translate-x-1/2 translate-y-0 sm:translate-x-0 sm:translate-y-0'
+            : '-translate-x-1/2 translate-y-full sm:translate-x-full sm:translate-y-0',
         )}
-        style={{
-          transform: isOpen
-            ? (typeof window !== 'undefined' && window.innerWidth >= 640 ? 'translateX(0)' : 'translate(-50%, 0)')
-            : (typeof window !== 'undefined' && window.innerWidth >= 640 ? 'translateX(100%)' : 'translate(-50%, 100%)'),
-          transition: 'transform 0.35s cubic-bezier(0.16,1,0.3,1)',
-        }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
