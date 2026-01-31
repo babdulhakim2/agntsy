@@ -376,6 +376,125 @@ a { color:var(--gold); text-decoration:none; }
 .send-btn.pop { animation:sendPop 0.3s var(--ease); }
 .send-btn svg { width:18px; height:18px; }
 
+/* Chat menu */
+.chat-menu-btn {
+  width:38px; height:38px; border-radius:var(--radius-sm);
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.15s; flex-shrink:0;
+}
+.chat-menu-btn:hover { background:var(--cream); }
+.chat-menu-btn:active { transform:scale(0.9); background:var(--stone); }
+.chat-menu-btn svg { width:20px; height:20px; color:var(--charcoal); }
+.chat-menu-wrap { position:relative; }
+.chat-dropdown {
+  position:absolute; top:44px; right:0; z-index:20;
+  background:var(--white); border:1px solid var(--border); border-radius:var(--radius-sm);
+  box-shadow:0 8px 32px rgba(0,0,0,0.12); min-width:160px;
+  opacity:0; transform:translateY(-4px) scale(0.95);
+  pointer-events:none; transition:all 0.18s var(--ease-out);
+}
+.chat-dropdown.open { opacity:1; transform:translateY(0) scale(1); pointer-events:auto; }
+.chat-dropdown-item {
+  padding:12px 16px; font-size:14px; display:flex; align-items:center; gap:10px;
+  cursor:pointer; transition:background 0.1s; color:var(--dark);
+}
+.chat-dropdown-item:first-child { border-radius:var(--radius-sm) var(--radius-sm) 0 0; }
+.chat-dropdown-item:last-child { border-radius:0 0 var(--radius-sm) var(--radius-sm); }
+.chat-dropdown-item:hover { background:var(--cream); }
+.chat-dropdown-item:active { background:var(--stone); }
+.chat-dropdown-item.danger { color:#D14; }
+.chat-dropdown-item.danger:hover { background:rgba(221,17,68,0.06); }
+.chat-dropdown-divider { height:1px; background:var(--border); margin:2px 0; }
+
+/* Delete confirm */
+.delete-confirm {
+  position:absolute; inset:0; z-index:110; background:rgba(45,42,38,0.4);
+  display:none; align-items:center; justify-content:center; padding:24px;
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+}
+.delete-confirm.show { display:flex; }
+.delete-confirm-card {
+  background:var(--white); border-radius:var(--radius); padding:28px 24px; text-align:center;
+  max-width:300px; width:100%; box-shadow:0 16px 48px rgba(0,0,0,0.15);
+  animation:fadeUp 0.25s var(--ease-out);
+}
+.delete-confirm-title { font-family:'Instrument Serif',serif; font-size:20px; color:var(--dark); margin-bottom:6px; }
+.delete-confirm-sub { font-size:13.5px; color:var(--muted); line-height:1.5; margin-bottom:20px; }
+.delete-confirm-btns { display:flex; gap:10px; }
+.delete-confirm-btns button {
+  flex:1; padding:12px; border-radius:var(--radius-sm); font-size:14px; font-weight:600;
+  transition:all 0.15s;
+}
+.delete-cancel { background:var(--cream); color:var(--dark); }
+.delete-cancel:hover { background:var(--stone); }
+.delete-do { background:#D14; color:#fff; }
+.delete-do:hover { background:#b8102e; }
+.delete-do:active { transform:scale(0.96); }
+
+/* Bottom sheet (memories) */
+.bottom-sheet-backdrop {
+  position:fixed; inset:0; z-index:250; background:rgba(45,42,38,0.4);
+  opacity:0; pointer-events:none; transition:opacity 0.25s;
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+}
+.bottom-sheet-backdrop.show { opacity:1; pointer-events:auto; }
+.bottom-sheet {
+  position:fixed; bottom:0; left:50%; z-index:260;
+  width:100%; max-width:600px; transform:translate(-50%, 100%);
+  background:var(--white); border-radius:20px 20px 0 0;
+  max-height:80dvh; display:flex; flex-direction:column;
+  box-shadow:0 -8px 40px rgba(0,0,0,0.12);
+  transition:transform 0.35s var(--ease-out);
+}
+.bottom-sheet.show { transform:translate(-50%, 0); }
+.bottom-sheet-handle {
+  width:36px; height:4px; border-radius:2px; background:var(--stone);
+  margin:10px auto 0;
+}
+.bottom-sheet-header {
+  padding:16px 24px 12px; display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid var(--border); flex-shrink:0;
+}
+.bottom-sheet-title { font-family:'Instrument Serif',serif; font-size:18px; color:var(--dark); }
+.bottom-sheet-close {
+  width:32px; height:32px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; color:var(--muted); transition:all 0.1s;
+}
+.bottom-sheet-close:hover { background:var(--cream); color:var(--dark); }
+.bottom-sheet-close:active { transform:scale(0.9); }
+.bottom-sheet-body {
+  flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:20px 24px;
+}
+.bottom-sheet-topic {
+  display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase;
+  letter-spacing:0.8px; padding:4px 10px; border-radius:6px; margin-bottom:12px;
+}
+.bottom-sheet-mem-title {
+  font-size:18px; font-weight:700; color:var(--dark); line-height:1.4; margin-bottom:8px;
+}
+.bottom-sheet-mem-body { font-size:14.5px; color:var(--muted); line-height:1.7; }
+.bottom-sheet-mem-body strong { color:var(--dark); }
+.bottom-sheet-meta {
+  margin-top:16px; padding-top:14px; border-top:1px solid var(--border);
+  display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted-light);
+}
+.bottom-sheet-actions {
+  display:flex; gap:10px; padding:16px 24px; border-top:1px solid var(--border);
+  flex-shrink:0; padding-bottom:calc(16px + var(--safe-bottom));
+}
+.bottom-sheet-actions button {
+  flex:1; padding:12px; border-radius:var(--radius-sm); font-size:14px; font-weight:600;
+  display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.15s;
+}
+.bs-copy { background:var(--cream); color:var(--dark); }
+.bs-copy:hover { background:var(--stone); }
+.bs-copy:active { transform:scale(0.96); }
+.bs-copy.copied { background:rgba(163,177,138,0.15); color:var(--sage); }
+.bs-delete { background:rgba(221,17,68,0.06); color:#D14; }
+.bs-delete:hover { background:rgba(221,17,68,0.12); }
+.bs-delete:active { transform:scale(0.96); }
+
 /* Chat empty state */
 .chat-empty {
   flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -538,6 +657,27 @@ a { color:var(--gold); text-decoration:none; }
         <div class="chat-header-title" id="chatTitle">New Chat</div>
         <div class="chat-header-status"><span class="status-dot"></span>Online</div>
       </div>
+      <div class="chat-menu-wrap">
+        <button class="chat-menu-btn" onclick="toggleChatMenu()" aria-label="Menu">
+          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+        </button>
+        <div class="chat-dropdown" id="chatDropdown">
+          <div class="chat-dropdown-item" onclick="shareChat()">📤 Share</div>
+          <div class="chat-dropdown-divider"></div>
+          <div class="chat-dropdown-item danger" onclick="confirmDeleteChat()">🗑 Delete</div>
+        </div>
+      </div>
+    </div>
+    <!-- Delete confirm -->
+    <div class="delete-confirm" id="deleteConfirm" onclick="if(event.target===this)cancelDelete()">
+      <div class="delete-confirm-card">
+        <div class="delete-confirm-title">Delete this chat?</div>
+        <div class="delete-confirm-sub">This will permanently remove the conversation and all its messages.</div>
+        <div class="delete-confirm-btns">
+          <button class="delete-cancel" onclick="cancelDelete()">Cancel</button>
+          <button class="delete-do" onclick="doDeleteChat()">Delete</button>
+        </div>
+      </div>
     </div>
     <div class="messages" id="messages"></div>
     <div class="composer">
@@ -549,6 +689,21 @@ a { color:var(--gold); text-decoration:none; }
           </svg>
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Memory bottom sheet -->
+  <div class="bottom-sheet-backdrop" id="memSheetBackdrop" onclick="closeMemSheet()"></div>
+  <div class="bottom-sheet" id="memSheet">
+    <div class="bottom-sheet-handle"></div>
+    <div class="bottom-sheet-header">
+      <div class="bottom-sheet-title">Memory</div>
+      <button class="bottom-sheet-close" onclick="closeMemSheet()">✕</button>
+    </div>
+    <div class="bottom-sheet-body" id="memSheetBody"></div>
+    <div class="bottom-sheet-actions">
+      <button class="bs-copy" id="memCopyBtn" onclick="copyMemory()">📋 Copy</button>
+      <button class="bs-delete" onclick="confirmDeleteMemory()">🗑 Delete</button>
     </div>
   </div>
 
@@ -570,12 +725,10 @@ var _previewStore = {};
 var activeThread = null;
 
 var PRESETS = [
-  { icon:'🔍', title:'Deep research', desc:'Comprehensive analysis with sources on any topic', prompt:'Research the latest trends in [your topic] — give me a comprehensive analysis with sources, key players, and opportunities.' },
-  { icon:'✍️', title:'Write for me', desc:'Emails, docs, copy — in your voice', prompt:'Draft a professional email to ' },
-  { icon:'📊', title:'Analyze data', desc:'Turn spreadsheets into actionable insights', prompt:'Analyze this data and identify the key patterns, outliers, and actionable insights: ' },
-  { icon:'🎯', title:'Plan & strategize', desc:'Break down goals into concrete steps', prompt:'Help me create a detailed plan for ' },
-  { icon:'💡', title:'Brainstorm ideas', desc:'Generate and refine creative concepts', prompt:'Brainstorm 10 creative ideas for ' },
-  { icon:'🤖', title:'Build something', desc:'Code, automate, create tools & systems', prompt:'Help me build ' }
+  { icon:'👋', title:'Say hello', desc:'See what I can do — you might be surprised', prompt:'Hey! What can you actually do? Surprise me with something cool.' },
+  { icon:'🕵️', title:'Stalk my competitors', desc:'I\'ll find stuff they don\'t want you to see', prompt:'Find everything you can about my competitors. Dig deep — pricing, team, tech stack, weaknesses. Here\'s my space: ' },
+  { icon:'🧠', title:'Roast my idea', desc:'Honest feedback. No sugarcoating.', prompt:'Here\'s my startup idea. Be brutally honest — poke every hole, find every weakness, then tell me how to fix it: ' },
+  { icon:'⚡', title:'10x my morning', desc:'Plan today like a maniac', prompt:'I have 8 hours today. Here\'s what I need to get done — make me a ruthlessly prioritized plan that actually works: ' }
 ];
 
 var THREADS = [
@@ -741,7 +894,7 @@ function renderMemories(filter) {
       '</div>' :
       '<div class="memories-list">' +
         filtered.map(function(m) {
-          return '<div class="memory-card card-stagger">' +
+          return '<div class="memory-card card-stagger" onclick="openMemSheet(' + m.id + ')">' +
             '<div class="memory-card-top">' +
               '<span class="memory-topic ' + m.topic + '">' + m.topicLabel + '</span>' +
               '<span class="memory-date">' + m.date + '</span>' +
@@ -784,9 +937,9 @@ function openNewChat(focusInput) {
       '<div class="chat-empty-sub">Research, writing, analysis, planning, code — I can handle it all.</div>' +
     '</div>' +
     '<div class="chat-suggestions">' +
-      '<button class="chat-suggest-btn" onclick="useSuggestion(this)"><span class="chat-suggest-icon">🎯</span>Help me plan my week and set priorities</button>' +
-      '<button class="chat-suggest-btn" onclick="useSuggestion(this)"><span class="chat-suggest-icon">📧</span>Draft a cold outreach email to a VC</button>' +
-      '<button class="chat-suggest-btn" onclick="useSuggestion(this)"><span class="chat-suggest-icon">🔍</span>Research competitors in my market</button>' +
+      '<button class="chat-suggest-btn" onclick="useSuggestion(this)"><span class="chat-suggest-icon">👋</span>Just say hi — see what happens</button>' +
+      '<button class="chat-suggest-btn" onclick="useSuggestion(this)"><span class="chat-suggest-icon">🔥</span>Give me the most useful thing you can do in 30 seconds</button>' +
+      '<button class="chat-suggest-btn" onclick="useSuggestion(this)"><span class="chat-suggest-icon">🧪</span>Test your limits — what\'s the hardest thing you can do?</button>' +
     '</div>';
 
   document.getElementById('chatOverlay').classList.add('open');
@@ -1020,6 +1173,128 @@ document.addEventListener('keydown', function(e) { if (e.key === 'Escape') close
     if (dx > 60 && dx > dy*1.5) closeChat();
   }, {passive:true});
 })();
+
+// ─── Chat Menu ───
+function toggleChatMenu() {
+  var dd = document.getElementById('chatDropdown');
+  dd.classList.toggle('open');
+}
+function closeChatMenu() {
+  document.getElementById('chatDropdown').classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.chat-menu-wrap')) closeChatMenu();
+});
+
+function shareChat() {
+  closeChatMenu();
+  // Copy chat URL / share API
+  if (navigator.share) {
+    navigator.share({ title:'Agentsy Chat', text:'Check out this conversation', url:window.location.href });
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(window.location.href);
+    // Brief visual feedback
+    var title = document.getElementById('chatTitle');
+    var orig = title.textContent;
+    title.textContent = 'Link copied!';
+    setTimeout(function() { title.textContent = orig; }, 1500);
+  }
+}
+
+function confirmDeleteChat() {
+  closeChatMenu();
+  document.getElementById('deleteConfirm').classList.add('show');
+}
+function cancelDelete() {
+  document.getElementById('deleteConfirm').classList.remove('show');
+}
+function doDeleteChat() {
+  document.getElementById('deleteConfirm').classList.remove('show');
+  if (activeThread) {
+    THREADS = THREADS.filter(function(t) { return t.id !== activeThread; });
+  }
+  closeChat();
+}
+
+// ─── Memory Bottom Sheet ───
+var activeMemory = null;
+
+function openMemSheet(id) {
+  var mem = MEMORIES.find(function(m) { return m.id === id; });
+  if (!mem) return;
+  activeMemory = mem;
+
+  var body = document.getElementById('memSheetBody');
+  body.innerHTML =
+    '<span class="bottom-sheet-topic memory-topic ' + mem.topic + '">' + mem.topicLabel + '</span>' +
+    '<div class="bottom-sheet-mem-title">' + mem.title + '</div>' +
+    '<div class="bottom-sheet-mem-body">' + mem.body + '</div>' +
+    '<div class="bottom-sheet-meta">💬 From ' + mem.source + ' · ' + mem.date + '</div>';
+
+  // Reset copy button
+  var copyBtn = document.getElementById('memCopyBtn');
+  copyBtn.textContent = '📋 Copy';
+  copyBtn.classList.remove('copied');
+
+  document.getElementById('memSheetBackdrop').classList.add('show');
+  document.getElementById('memSheet').classList.add('show');
+}
+
+function closeMemSheet() {
+  document.getElementById('memSheetBackdrop').classList.remove('show');
+  document.getElementById('memSheet').classList.remove('show');
+  activeMemory = null;
+}
+
+function copyMemory() {
+  if (!activeMemory) return;
+  var plain = activeMemory.title + '\n\n' + activeMemory.body.replace(/<[^>]+>/g, '');
+  navigator.clipboard.writeText(plain).then(function() {
+    var btn = document.getElementById('memCopyBtn');
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = '📋 Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+function confirmDeleteMemory() {
+  if (!activeMemory) return;
+  // Inline confirm in the sheet
+  var body = document.getElementById('memSheetBody');
+  body.innerHTML =
+    '<div style="text-align:center;padding:20px 0">' +
+      '<div style="font-size:32px;margin-bottom:12px">🗑</div>' +
+      '<div style="font-family:Instrument Serif,serif;font-size:20px;color:var(--dark);margin-bottom:6px">Delete this memory?</div>' +
+      '<div style="font-size:13.5px;color:var(--muted);margin-bottom:20px">This can\'t be undone.</div>' +
+      '<div style="display:flex;gap:10px;max-width:260px;margin:0 auto">' +
+        '<button onclick="closeDeleteMemory()" style="flex:1;padding:12px;border-radius:10px;background:var(--cream);color:var(--dark);font-size:14px;font-weight:600;border:none;cursor:pointer">Cancel</button>' +
+        '<button onclick="doDeleteMemory()" style="flex:1;padding:12px;border-radius:10px;background:#D14;color:#fff;font-size:14px;font-weight:600;border:none;cursor:pointer">Delete</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function closeDeleteMemory() {
+  if (activeMemory) openMemSheet(activeMemory.id);
+}
+
+function doDeleteMemory() {
+  if (!activeMemory) return;
+  var id = activeMemory.id;
+  MEMORIES = MEMORIES.filter(function(m) { return m.id !== id; });
+  closeMemSheet();
+  renderMemories();
+}
+
+// Close sheet on ESC
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    if (document.getElementById('memSheet').classList.contains('show')) closeMemSheet();
+    if (document.getElementById('deleteConfirm').classList.contains('show')) cancelDelete();
+  }
+});
 
 // ─── Init ───
 renderHome();
