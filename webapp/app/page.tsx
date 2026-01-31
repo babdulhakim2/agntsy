@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, FormEvent } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import s from './landing.module.css'
 
 const PlusIcon = () => (
@@ -21,8 +21,6 @@ const FAQ_DATA = [
 export default function LandingPage() {
   const [navScrolled, setNavScrolled] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
-  const [heroSuccess, setHeroSuccess] = useState(false)
-  const [ctaSuccess, setCtaSuccess] = useState(false)
   const [chatInView, setChatInView] = useState(false)
 
   const chatMockRef = useRef<HTMLDivElement>(null)
@@ -68,32 +66,6 @@ export default function LandingPage() {
     setOpenFaq((prev) => (prev === idx ? null : idx))
   }, [])
 
-  // Waitlist submit
-  const handleSubmit = useCallback(async (e: FormEvent<HTMLFormElement>, source: 'hero' | 'cta') => {
-    e.preventDefault()
-    const form = e.currentTarget
-    const input = form.querySelector('input[type="email"]') as HTMLInputElement
-    const email = input?.value
-    if (!email) return
-
-    // Store in localStorage
-    const waitlist = JSON.parse(localStorage.getItem('agentsy-waitlist') || '[]')
-    if (!waitlist.includes(email)) {
-      waitlist.push(email)
-      localStorage.setItem('agentsy-waitlist', JSON.stringify(waitlist))
-    }
-
-    // POST to API
-    fetch('/api/waitlist', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, source, timestamp: new Date().toISOString() }),
-    }).catch(() => {})
-
-    if (source === 'hero') setHeroSuccess(true)
-    else setCtaSuccess(true)
-  }, [])
-
   // Smooth scroll for anchor links
   const scrollTo = useCallback((id: string) => {
     const el = document.getElementById(id)
@@ -108,8 +80,8 @@ export default function LandingPage() {
           <a href="#" className={s.navLogo} onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
             Agentsy<span className={s.navLogoAccent}>.</span>
           </a>
-          <a href="#waitlist" className={s.navCta} onClick={(e) => { e.preventDefault(); scrollTo('waitlist') }}>
-            Join Waitlist
+          <a href="/home" className={s.navCta}>
+            Get Started
           </a>
         </div>
       </nav>
@@ -121,7 +93,7 @@ export default function LandingPage() {
         <div className={s.heroContent}>
           <div className={s.heroBadge}>
             <span className={s.heroBadgeDot} />
-            Now accepting early access
+            Try it free — no signup required
           </div>
           <h1 className={s.heroTitle}>
             <span className={`${s.heroWord} ${s.heroWord1}`}>Your </span>
@@ -134,14 +106,9 @@ export default function LandingPage() {
           <p className={s.heroSub}>
             A personal AI agent that lives in your WhatsApp. Research, write, plan, and manage — just text a message and let your agent handle the rest.
           </p>
-          {!heroSuccess ? (
-            <form className={s.waitlistForm} onSubmit={(e) => handleSubmit(e, 'hero')}>
-              <input type="email" className={s.waitlistInput} placeholder="you@email.com" required aria-label="Email address" />
-              <button type="submit" className={s.waitlistButton}>Join the waitlist</button>
-            </form>
-          ) : (
-            <div className={`${s.formSuccess} ${s.formSuccessShow}`}>🎉 You&apos;re on the list!</div>
-          )}
+          <div className={s.heroCta}>
+            <a href="/home" className={s.heroCtaButton}>Get Started →</a>
+          </div>
         </div>
         <div className={s.scrollHint}>
           <svg className={s.chevron} viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth="2" strokeLinecap="round">
@@ -351,27 +318,19 @@ export default function LandingPage() {
       </section>
 
       {/* ==================== FINAL CTA ==================== */}
-      <section className={s.finalCta} id="waitlist">
+      <section className={s.finalCta} id="cta">
         <div className={s.finalCtaOrb} />
         <div className={`${s.container} ${s.finalCtaContainer}`}>
-          <div className={`${s.sectionLabel} ${s.reveal}`} style={{ justifyContent: 'center' }}>Early Access</div>
+          <div className={`${s.sectionLabel} ${s.reveal}`} style={{ justifyContent: 'center' }}>Ready?</div>
           <h2 className={`${s.reveal} ${s.revealDelay1}`}>
-            Be the first to<br />try <em className={s.heroEm}>Agentsy</em>
+            Try <em className={s.heroEm}>Agentsy</em><br />right now
           </h2>
           <p className={`${s.sectionSubtitle} ${s.finalCtaSubtitle} ${s.reveal} ${s.revealDelay2}`}>
-            Join the waitlist and get early access when we launch. No spam, just one email when it&apos;s your turn.
+            No signup. No credit card. Just start talking to your agent.
           </p>
-          {!ctaSuccess ? (
-            <form
-              className={`${s.waitlistForm} ${s.finalCtaForm} ${s.reveal} ${s.revealDelay3}`}
-              onSubmit={(e) => handleSubmit(e, 'cta')}
-            >
-              <input type="email" className={`${s.waitlistInput} ${s.finalCtaInput}`} placeholder="you@email.com" required aria-label="Email address" />
-              <button type="submit" className={`${s.waitlistButton} ${s.finalCtaButton}`}>Join the waitlist</button>
-            </form>
-          ) : (
-            <div className={`${s.formSuccess} ${s.formSuccessShow} ${s.finalCtaSuccess}`}>🎉 You&apos;re on the list!</div>
-          )}
+          <div className={`${s.reveal} ${s.revealDelay3}`} style={{ textAlign: 'center' }}>
+            <a href="/home" className={s.finalCtaGetStarted}>Get Started →</a>
+          </div>
         </div>
       </section>
 

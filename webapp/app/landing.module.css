@@ -968,6 +968,48 @@
 }
 .footerLink:hover { color: var(--gold); }
 
+/* ========== HERO CTA BUTTON ========== */
+.heroCta {
+  opacity: 0;
+  animation: fadeUp 0.8s 1.3s var(--transition) forwards;
+}
+.heroCtaButton {
+  display: inline-block;
+  padding: 18px 48px;
+  background: var(--charcoal);
+  color: var(--white);
+  border-radius: 14px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.3s var(--transition), box-shadow 0.3s ease, background 0.3s ease;
+}
+.heroCtaButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+  background: #3a3632;
+}
+.heroCtaButton:active { transform: translateY(0); }
+
+/* ========== FINAL CTA GET STARTED ========== */
+.finalCtaGetStarted {
+  display: inline-block;
+  padding: 18px 48px;
+  background: var(--gold);
+  color: var(--dark);
+  border-radius: 14px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.3s var(--transition), box-shadow 0.3s ease, background 0.3s ease;
+}
+.finalCtaGetStarted:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(201,169,110,0.3);
+  background: #d4b478;
+}
+.finalCtaGetStarted:active { transform: translateY(0); }
+
 /* ========== PAGE WRAPPER ========== */
 .page {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;

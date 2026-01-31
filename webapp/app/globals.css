@@ -35,16 +35,13 @@ html {
   scroll-behavior: smooth;
 }
 
-html, body {
-  height: 100%;
-}
-
 body {
   font-family: var(--font-body);
   background: var(--color-cream);
   color: var(--color-dark);
   line-height: 1.5;
   touch-action: manipulation;
+  min-height: 100dvh;
 }
 
 button {
@@ -124,12 +121,4 @@ a {
 .thin-scrollbar::-webkit-scrollbar { width: 3px; }
 .thin-scrollbar::-webkit-scrollbar-thumb { background: var(--color-stone); border-radius: 3px; }
 
-/* Desktop layout */
-@media (min-width: 640px) {
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--color-cream);
-  }
-}
+/* Desktop layout — only for app pages using AppShell */
