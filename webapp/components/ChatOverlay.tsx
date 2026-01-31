@@ -216,7 +216,7 @@ export function ChatOverlay({ open, thread, initialPrompt, onClose, onDelete }: 
                     setInputVal(clean)
                     inputRef.current?.focus()
                   }}
-                  className="px-4 py-3 rounded-[16px] border border-border bg-surface text-[13.5px] text-dark text-left flex items-center gap-2.5 leading-relaxed hover:border-stone hover:bg-cream active:scale-[0.97] transition-all"
+                  className="px-4 py-3 rounded-[16px] border border-[rgba(0,0,0,0.12)] bg-surface text-[13.5px] text-dark text-left flex items-center gap-2.5 leading-relaxed shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:border-[rgba(0,0,0,0.2)] hover:bg-cream active:scale-[0.97] transition-all"
                 >
                   <span className="text-lg shrink-0">{s.icon}</span>
                   {s.text}

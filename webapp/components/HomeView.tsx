@@ -76,7 +76,7 @@ export function HomeView({ threads, onNewChat, onOpenThread }: HomeViewProps) {
             <button
               key={i}
               onClick={() => onNewChat(preset.prompt)}
-              className="p-4 rounded-[16px] border border-border bg-surface text-left flex flex-col gap-2 hover:border-stone hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] hover:-translate-y-px active:scale-[0.97] active:shadow-none transition-all"
+              className="p-4 rounded-[16px] border border-[rgba(0,0,0,0.12)] bg-surface text-left flex flex-col gap-2 shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:border-[rgba(0,0,0,0.2)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] hover:-translate-y-px active:scale-[0.97] active:shadow-none transition-all"
             >
               <span className="text-2xl leading-none">{preset.icon}</span>
               <span className="text-sm font-semibold text-dark leading-snug">{preset.title}</span>
@@ -90,8 +90,8 @@ export function HomeView({ threads, onNewChat, onOpenThread }: HomeViewProps) {
       {threads.length > 0 && (
         <div className="px-6 pt-6 pb-2">
           <div className="text-[11px] font-bold uppercase tracking-wider text-muted-light mb-3">Recent</div>
-          <div className="flex flex-col gap-0.5">
-            {threads.map((t) => {
+          <div className="flex flex-col">
+            {threads.map((t, idx) => {
               const lastMsg = t.messages.length
                 ? stripMarkdown(t.messages[t.messages.length - 1].text).slice(0, 60)
                 : ''
@@ -99,7 +99,7 @@ export function HomeView({ threads, onNewChat, onOpenThread }: HomeViewProps) {
                 <button
                   key={t.id}
                   onClick={() => onOpenThread(t.id)}
-                  className={`flex items-center gap-3 px-3 py-3.5 rounded-[10px] text-left hover:bg-cream active:bg-stone-light active:scale-[0.98] transition-all ${t.unread ? '' : ''}`}
+                  className={`flex items-center gap-3 px-3 py-3.5 rounded-[10px] text-left hover:bg-cream active:bg-stone-light active:scale-[0.98] transition-all ${idx < threads.length - 1 ? 'border-b border-[rgba(0,0,0,0.1)]' : ''} ${t.unread ? '' : ''}`}
                 >
                   <div
                     className="w-10 h-10 rounded-full shrink-0 flex items-center justify-center font-serif text-base text-white"

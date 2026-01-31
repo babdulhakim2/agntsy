@@ -83,7 +83,7 @@ export function MemoriesView({ memories, onOpenMemory }: MemoriesViewProps) {
             <button
               key={m.id}
               onClick={() => onOpenMemory(m)}
-              className="p-4 rounded-[16px] border border-border bg-surface text-left hover:border-stone hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-all"
+              className="p-4 rounded-[16px] border border-[rgba(0,0,0,0.12)] bg-surface text-left shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:border-[rgba(0,0,0,0.2)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] active:scale-[0.98] transition-all"
             >
               <div className="flex items-center justify-between mb-2">
                 <span className={cn('text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-md', topicColors[m.topic])}>
