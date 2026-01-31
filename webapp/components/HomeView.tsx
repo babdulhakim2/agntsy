@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import gsap from 'gsap'
 import { getGreeting, stripMarkdown } from '@/lib/utils'
 import { PRESETS, type Thread } from '@/lib/mockData'
@@ -13,6 +13,11 @@ interface HomeViewProps {
 
 export function HomeView({ threads, onNewChat, onOpenThread }: HomeViewProps) {
   const cardsRef = useRef<HTMLDivElement>(null)
+  const [greeting, setGreeting] = useState('Hello')
+
+  useEffect(() => {
+    setGreeting(getGreeting())
+  }, [])
 
   useEffect(() => {
     if (cardsRef.current) {
@@ -43,7 +48,7 @@ export function HomeView({ threads, onNewChat, onOpenThread }: HomeViewProps) {
 
       {/* Greeting */}
       <div className="px-6 pt-7 pb-2">
-        <h1 className="font-serif text-[28px] text-dark leading-tight tracking-tight">{getGreeting()}</h1>
+        <h1 className="font-serif text-[28px] text-dark leading-tight tracking-tight">{greeting}</h1>
         <p className="text-[15px] text-muted mt-1.5">What should we work on?</p>
       </div>
 
