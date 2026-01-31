@@ -32,11 +32,11 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
 }
 
 html, body {
   height: 100%;
-  overflow: hidden;
 }
 
 body {
