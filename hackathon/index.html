@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentsy — Self-Improving Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0A0A0F;
+  --surface: #12121A;
+  --surface2: #1A1A26;
+  --border: #2A2A3A;
+  --text: #E8E8F0;
+  --muted: #6B6B80;
+  --accent: #7C5CFC;
+  --accent2: #A78BFA;
+  --green: #34D399;
+  --red: #F87171;
+  --orange: #FBBF24;
+  --blue: #60A5FA;
+  --cyan: #22D3EE;
+  --font: 'Inter', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+html { font-size: 14px; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100dvh; overflow-x: hidden; }
+
+/* ─── Layout ─── */
+.app { display: flex; flex-direction: column; height: 100dvh; }
+.topbar {
+  height: 52px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  background: var(--surface);
+}
+.topbar-brand { display: flex; align-items: center; gap: 10px; }
+.topbar-logo {
+  width: 32px; height: 32px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), #A78BFA);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 14px; color: #fff;
+}
+.topbar-name { font-weight: 700; font-size: 16px; letter-spacing: -0.3px; }
+.topbar-tag {
+  font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+  padding: 4px 10px; border-radius: 6px;
+  background: rgba(124,92,252,0.15); color: var(--accent2);
+}
+.topbar-stats { display: flex; gap: 20px; }
+.topbar-stat { text-align: center; }
+.topbar-stat-val { font-size: 18px; font-weight: 800; font-family: var(--mono); }
+.topbar-stat-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+
+.main { flex: 1; display: flex; overflow: hidden; }
+
+/* ─── Chat Panel ─── */
+.chat-panel {
+  flex: 1; display: flex; flex-direction: column;
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+.chat-header {
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.chat-header h2 { font-size: 14px; font-weight: 700; }
+.chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+.msg { display: flex; gap: 10px; max-width: 90%; animation: msgIn 0.3s ease-out; }
+.msg-user { align-self: flex-end; flex-direction: row-reverse; }
+.msg-avatar {
+  width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.msg-agent .msg-avatar { background: linear-gradient(135deg, var(--accent), #A78BFA); }
+.msg-user .msg-avatar { background: var(--surface2); }
+.msg-bubble {
+  padding: 12px 16px; border-radius: 16px; font-size: 13px; line-height: 1.6;
+}
+.msg-agent .msg-bubble { background: var(--surface2); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.msg-user .msg-bubble { background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+
+.msg-thinking {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 16px; border-bottom-left-radius: 4px;
+  font-size: 12px; color: var(--muted);
+}
+.thinking-dots span {
+  display: inline-block; width: 6px; height: 6px; border-radius: 999px;
+  background: var(--accent); animation: dot 1.2s infinite;
+}
+.thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+.thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+.msg-skill {
+  background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2);
+  border-radius: 12px; padding: 12px 16px; margin-top: 4px;
+}
+.msg-skill-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.msg-skill-badge {
+  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+  padding: 3px 8px; border-radius: 4px; background: rgba(52,211,153,0.15); color: var(--green);
+}
+.msg-skill pre {
+  font-family: var(--mono); font-size: 11px; line-height: 1.5; color: var(--green);
+  background: rgba(0,0,0,0.3); padding: 10px 12px; border-radius: 8px;
+  overflow-x: auto; white-space: pre;
+}
+
+.chat-input-wrap {
+  padding: 16px 20px; border-top: 1px solid var(--border);
+}
+.chat-input {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 14px; padding: 4px 6px 4px 16px;
+}
+.chat-input input {
+  flex: 1; background: none; border: none; outline: none;
+  font-family: var(--font); font-size: 14px; color: var(--text);
+  padding: 10px 0;
+}
+.chat-input input::placeholder { color: var(--muted); }
+.chat-input button {
+  width: 36px; height: 36px; border-radius: 10px; border: none;
+  background: var(--accent); color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+
+/* ─── Right Panels ─── */
+.panels {
+  width: 420px; flex-shrink: 0; display: flex; flex-direction: column;
+  overflow-y: auto; background: var(--surface);
+}
+.panel {
+  border-bottom: 1px solid var(--border); padding: 16px 18px;
+}
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.panel-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--muted);
+}
+.panel-badge {
+  font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+  text-transform: uppercase; letter-spacing: 0.8px;
+}
+
+/* Weave Trace Panel */
+.trace-steps { display: flex; flex-direction: column; gap: 2px; }
+.trace-step {
+  display: flex; align-items: flex-start; gap: 10px; padding: 6px 10px;
+  border-radius: 8px; font-size: 12px; position: relative;
+  animation: traceIn 0.3s ease-out backwards;
+}
+.trace-step:nth-child(1) { animation-delay: 0ms; }
+.trace-step:nth-child(2) { animation-delay: 100ms; }
+.trace-step:nth-child(3) { animation-delay: 200ms; }
+.trace-step:nth-child(4) { animation-delay: 300ms; }
+.trace-step:nth-child(5) { animation-delay: 400ms; }
+.trace-step:nth-child(6) { animation-delay: 500ms; }
+.trace-dot {
+  width: 8px; height: 8px; border-radius: 999px; flex-shrink: 0; margin-top: 4px;
+}
+.trace-dot.ok { background: var(--green); box-shadow: 0 0 8px rgba(52,211,153,0.4); }
+.trace-dot.fail { background: var(--red); box-shadow: 0 0 8px rgba(248,113,113,0.4); }
+.trace-dot.learn { background: var(--orange); box-shadow: 0 0 8px rgba(251,191,36,0.4); }
+.trace-dot.active { background: var(--accent); box-shadow: 0 0 8px rgba(124,92,252,0.4); animation: pulse 1.5s infinite; }
+.trace-label { color: var(--muted); min-width: 60px; flex-shrink: 0; }
+.trace-text { color: var(--text); flex: 1; }
+.trace-step.fail-row { background: rgba(248,113,113,0.06); }
+.trace-step.learn-row { background: rgba(251,191,36,0.06); }
+.trace-step.ok-row { background: rgba(52,211,153,0.06); }
+.trace-time { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+
+/* Redis Memory Panel */
+.skills-list { display: flex; flex-direction: column; gap: 6px; }
+.skill-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+  background: var(--surface2); border-radius: 10px; border: 1px solid var(--border);
+  animation: skillIn 0.4s ease-out backwards;
+}
+.skill-item:nth-child(1) { animation-delay: 0ms; }
+.skill-item:nth-child(2) { animation-delay: 100ms; }
+.skill-item:nth-child(3) { animation-delay: 200ms; }
+.skill-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+  flex-shrink: 0;
+}
+.skill-info { flex: 1; min-width: 0; }
+.skill-name { font-size: 13px; font-weight: 600; }
+.skill-meta { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.skill-score {
+  font-family: var(--mono); font-size: 12px; font-weight: 700;
+  padding: 4px 8px; border-radius: 6px;
+}
+
+/* Browser Panel */
+.browser-frame {
+  background: #1a1a2a; border: 1px solid var(--border); border-radius: 10px;
+  overflow: hidden;
+}
+.browser-bar {
+  display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+}
+.browser-dots { display: flex; gap: 4px; }
+.browser-dots span { width: 8px; height: 8px; border-radius: 999px; }
+.browser-url {
+  flex: 1; font-family: var(--mono); font-size: 11px; color: var(--muted);
+  background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 6px;
+}
+.browser-content { padding: 14px; min-height: 80px; font-size: 12px; line-height: 1.6; }
+.browser-content .hn-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.browser-content .hn-rank { color: var(--muted); font-family: var(--mono); font-size: 11px; width: 20px; }
+.browser-content .hn-title { color: var(--cyan); font-size: 12px; }
+.browser-content .hn-meta { color: var(--muted); font-size: 10px; }
+
+/* Improvement Chart */
+.chart-container { position: relative; height: 80px; }
+.chart-bar-wrap { display: flex; align-items: flex-end; gap: 4px; height: 60px; }
+.chart-bar {
+  flex: 1; border-radius: 4px 4px 0 0; min-height: 4px;
+  transition: height 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+.chart-labels { display: flex; justify-content: space-between; margin-top: 6px; }
+.chart-labels span { font-size: 9px; color: var(--muted); }
+
+/* ─── Sponsor Bar ─── */
+.sponsor-bar {
+  height: 44px; display: flex; align-items: center; justify-content: center;
+  gap: 28px; border-top: 1px solid var(--border); flex-shrink: 0;
+  padding: 0 20px; background: var(--surface);
+}
+.sponsor-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 600; color: var(--muted);
+  opacity: 0.5; transition: opacity 0.3s;
+}
+.sponsor-item.active { opacity: 1; color: var(--text); }
+.sponsor-dot { width: 6px; height: 6px; border-radius: 999px; }
+
+/* ─── Voice Panel ─── */
+.voice-wave {
+  display: flex; align-items: center; justify-content: center; gap: 2px; height: 32px;
+}
+.voice-wave span {
+  width: 3px; border-radius: 2px; background: var(--accent);
+  animation: wave 0.8s ease infinite;
+}
+.voice-wave span:nth-child(1) { height: 12px; animation-delay: 0s; }
+.voice-wave span:nth-child(2) { height: 20px; animation-delay: 0.1s; }
+.voice-wave span:nth-child(3) { height: 28px; animation-delay: 0.2s; }
+.voice-wave span:nth-child(4) { height: 16px; animation-delay: 0.3s; }
+.voice-wave span:nth-child(5) { height: 24px; animation-delay: 0.4s; }
+.voice-wave span:nth-child(6) { height: 10px; animation-delay: 0.5s; }
+
+/* ─── Animations ─── */
+@keyframes msgIn { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }
+@keyframes traceIn { from { opacity:0; transform:translateX(-8px) } to { opacity:1; transform:translateX(0) } }
+@keyframes skillIn { from { opacity:0; transform:scale(0.95) } to { opacity:1; transform:scale(1) } }
+@keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.4 } }
+@keyframes dot { 0%,100% { opacity:0.3; transform:scale(0.8) } 50% { opacity:1; transform:scale(1) } }
+@keyframes wave { 0%,100% { transform:scaleY(0.4) } 50% { transform:scaleY(1) } }
+@keyframes glow { 0%,100% { box-shadow: 0 0 4px var(--accent) } 50% { box-shadow: 0 0 16px var(--accent) } }
+
+/* ─── Mobile ─── */
+@media(max-width:900px) {
+  .main { flex-direction: column; }
+  .panels { width: 100%; max-height: 50dvh; border-left: none; border-top: 1px solid var(--border); }
+  .chat-panel { border-right: none; }
+  .topbar-stats { display: none; }
+  .sponsor-bar { gap: 14px; overflow-x: auto; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ─── Top Bar ─── -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-logo">A</div>
+      <span class="topbar-name">Agentsy</span>
+      <span class="topbar-tag">Self-Improving</span>
+    </div>
+    <div class="topbar-stats">
+      <div class="topbar-stat">
+        <div class="topbar-stat-val" style="color:var(--green)" id="stat-success">80%</div>
+        <div class="topbar-stat-label">Success Rate</div>
+      </div>
+      <div class="topbar-stat">
+        <div class="topbar-stat-val" style="color:var(--accent2)" id="stat-skills">3</div>
+        <div class="topbar-stat-label">Skills Learned</div>
+      </div>
+      <div class="topbar-stat">
+        <div class="topbar-stat-val" style="color:var(--orange)" id="stat-tasks">5</div>
+        <div class="topbar-stat-label">Tasks Run</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Main Area ─── -->
+  <div class="main">
+    <!-- Chat -->
+    <div class="chat-panel">
+      <div class="chat-header">
+        <h2>💬 Agent Chat</h2>
+        <div style="display:flex;gap:8px">
+          <span style="font-size:10px;color:var(--green);font-weight:600">● LIVE</span>
+        </div>
+      </div>
+      <div class="chat-messages" id="chat">
+        <!-- Task 1: Web scraping -->
+        <div class="msg msg-user">
+          <div class="msg-avatar">👤</div>
+          <div class="msg-bubble">Find the top 3 stories on Hacker News right now</div>
+        </div>
+        <div class="msg msg-agent">
+          <div class="msg-avatar">A</div>
+          <div>
+            <div class="msg-bubble">I'll look that up for you... Hmm, I don't have a web browsing skill yet. Let me check my failure trace and learn how.</div>
+            <div class="msg-skill" style="margin-top:8px">
+              <div class="msg-skill-header">
+                <span class="msg-skill-badge">🔧 New Skill Created</span>
+                <span style="font-size:10px;color:var(--muted)">web_scrape via Browserbase</span>
+              </div>
+              <pre>// skill: web_scrape
+// learned from: Weave trace #47
+// stored in: Redis memory
+
+import Stagehand from "@browserbasehq/stagehand"
+
+const browser = new Stagehand()
+await browser.init()
+await browser.goto(url)
+const data = await browser.extract(schema)</pre>
+            </div>
+          </div>
+        </div>
+        <div class="msg msg-agent">
+          <div class="msg-avatar">A</div>
+          <div class="msg-bubble">Got it! Here are the top stories from Hacker News:
+            <br><br>
+            <strong>1.</strong> Show HN: I built a self-improving agent framework<br>
+            <strong>2.</strong> Redis just released vector search 2.0<br>
+            <strong>3.</strong> Why AI agents need better memory systems
+          </div>
+        </div>
+
+        <!-- Task 2: Voice -->
+        <div class="msg msg-user">
+          <div class="msg-avatar">👤</div>
+          <div class="msg-bubble">Call my teammate and tell them about these stories</div>
+        </div>
+        <div class="msg msg-agent">
+          <div class="msg-avatar">A</div>
+          <div>
+            <div class="msg-bubble">I don't have a calling skill yet. Let me learn from the trace...</div>
+            <div class="msg-skill" style="margin-top:8px">
+              <div class="msg-skill-header">
+                <span class="msg-skill-badge">🔧 New Skill Created</span>
+                <span style="font-size:10px;color:var(--muted)">voice_call via Daily/Pipecat</span>
+              </div>
+              <pre>// skill: voice_call
+// learned from: Weave trace #48
+// stored in: Redis memory
+
+import { DailyClient } from "@daily-co/daily-js"
+import { PipecatAgent } from "pipecat-ai"
+
+const agent = new PipecatAgent({ voice: "nova" })
+await agent.call(phoneNumber, { script })</pre>
+            </div>
+          </div>
+        </div>
+        <div class="msg msg-agent">
+          <div class="msg-avatar">A</div>
+          <div class="msg-bubble">📞 Calling your teammate now...
+            <div style="margin-top:10px">
+              <div class="voice-wave">
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+              </div>
+              <p style="font-size:10px;color:var(--muted);text-align:center;margin-top:6px">Connected via Daily · 0:34</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Task 3: Data analysis -->
+        <div class="msg msg-user">
+          <div class="msg-avatar">👤</div>
+          <div class="msg-bubble">Now analyze this CSV of our user signups and find patterns</div>
+        </div>
+        <div class="msg msg-agent">
+          <div class="msg-avatar">A</div>
+          <div>
+            <div class="msg-bubble">Let me learn data analysis... Found a similar pattern in my memory from the web_scrape skill. Adapting it for data work.</div>
+            <div class="msg-skill" style="margin-top:8px">
+              <div class="msg-skill-header">
+                <span class="msg-skill-badge">🔧 New Skill Created</span>
+                <span style="font-size:10px;color:var(--muted)">data_analysis via Marimo + Google Cloud</span>
+              </div>
+              <pre>// skill: data_analysis
+// learned from: Weave trace #49
+// similarity: 0.72 to web_scrape (Redis)
+
+import marimo as mo
+from google.cloud import aiplatform
+
+notebook = mo.create()
+df = notebook.read_csv(file_path)
+insights = aiplatform.predict(
+  model="gemini-pro", prompt=f"Analyze: {df.describe()}"
+)</pre>
+            </div>
+          </div>
+        </div>
+        <div class="msg msg-agent">
+          <div class="msg-avatar">A</div>
+          <div class="msg-bubble">📊 Analysis complete:
+            <br><br>
+            <strong>Key findings:</strong><br>
+            • 73% of signups come from Twitter/X referrals<br>
+            • Tuesday 2-4pm is the peak signup window<br>
+            • Users who complete onboarding in &lt;5 min have 3x retention
+            <br><br>
+            <em style="color:var(--muted);font-size:11px">Full notebook deployed to Vercel →</em>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input-wrap">
+        <div class="chat-input">
+          <input type="text" placeholder="Give Agentsy a task it's never done before..." id="chatInput">
+          <button>→</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Right Panels ─── -->
+    <div class="panels">
+      <!-- Weave Trace -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span style="color:var(--orange)">🔍</span> Weave Trace
+            <span class="panel-badge" style="background:rgba(251,191,36,0.15);color:var(--orange)">LIVE</span>
+          </div>
+          <span style="font-size:10px;color:var(--muted)">Trace #49</span>
+        </div>
+        <div class="trace-steps">
+          <div class="trace-step ok-row">
+            <div class="trace-dot ok"></div>
+            <span class="trace-label" style="color:var(--green)">PARSE</span>
+            <span class="trace-text">Identified intent: data_analysis</span>
+            <span class="trace-time">12ms</span>
+          </div>
+          <div class="trace-step fail-row">
+            <div class="trace-dot fail"></div>
+            <span class="trace-label" style="color:var(--red)">EXEC</span>
+            <span class="trace-text">No data_analysis skill found</span>
+            <span class="trace-time">3ms</span>
+          </div>
+          <div class="trace-step" style="background:rgba(124,92,252,0.06)">
+            <div class="trace-dot active"></div>
+            <span class="trace-label" style="color:var(--accent2)">SEARCH</span>
+            <span class="trace-text">Redis → web_scrape (0.72 similarity)</span>
+            <span class="trace-time">8ms</span>
+          </div>
+          <div class="trace-step learn-row">
+            <div class="trace-dot learn"></div>
+            <span class="trace-label" style="color:var(--orange)">LEARN</span>
+            <span class="trace-text">Reading own trace → writing skill</span>
+            <span class="trace-time">1.2s</span>
+          </div>
+          <div class="trace-step ok-row">
+            <div class="trace-dot ok"></div>
+            <span class="trace-label" style="color:var(--green)">STORE</span>
+            <span class="trace-text">data_analysis → Redis memory</span>
+            <span class="trace-time">4ms</span>
+          </div>
+          <div class="trace-step ok-row">
+            <div class="trace-dot ok"></div>
+            <span class="trace-label" style="color:var(--green)">EXEC</span>
+            <span class="trace-text">Skill executed successfully ✓</span>
+            <span class="trace-time">3.4s</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Redis Memory -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span style="color:var(--red)">🧠</span> Redis Memory
+          </div>
+          <span style="font-size:10px;color:var(--muted)">3 skills</span>
+        </div>
+        <div class="skills-list">
+          <div class="skill-item">
+            <div class="skill-icon" style="background:rgba(34,211,238,0.1)">🌐</div>
+            <div class="skill-info">
+              <div class="skill-name">web_scrape</div>
+              <div class="skill-meta">Browserbase · Learned from trace #47 · Used 3x</div>
+            </div>
+            <div class="skill-score" style="background:rgba(52,211,153,0.1);color:var(--green)">0.95</div>
+          </div>
+          <div class="skill-item">
+            <div class="skill-icon" style="background:rgba(124,92,252,0.1)">📞</div>
+            <div class="skill-info">
+              <div class="skill-name">voice_call</div>
+              <div class="skill-meta">Daily/Pipecat · Learned from trace #48 · Used 1x</div>
+            </div>
+            <div class="skill-score" style="background:rgba(251,191,36,0.1);color:var(--orange)">0.87</div>
+          </div>
+          <div class="skill-item" style="border-color:var(--accent);box-shadow:0 0 12px rgba(124,92,252,0.1)">
+            <div class="skill-icon" style="background:rgba(96,165,250,0.1)">📊</div>
+            <div class="skill-info">
+              <div class="skill-name" style="color:var(--accent2)">data_analysis <span style="font-size:9px;color:var(--orange)">● NEW</span></div>
+              <div class="skill-meta">Marimo + GCP · Learned from trace #49 · Used 1x</div>
+            </div>
+            <div class="skill-score" style="background:rgba(124,92,252,0.1);color:var(--accent2)">0.72</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Browserbase Preview -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>🖥️</span> Browserbase
+            <span class="panel-badge" style="background:rgba(34,211,238,0.15);color:var(--cyan)">STAGEHAND</span>
+          </div>
+        </div>
+        <div class="browser-frame">
+          <div class="browser-bar">
+            <div class="browser-dots">
+              <span style="background:#FF5F57"></span>
+              <span style="background:#FFBD2E"></span>
+              <span style="background:#28CA41"></span>
+            </div>
+            <div class="browser-url">news.ycombinator.com</div>
+          </div>
+          <div class="browser-content">
+            <div class="hn-item"><span class="hn-rank">1.</span><span class="hn-title">Show HN: Self-improving agent framework</span></div>
+            <div class="hn-item" style="padding-left:28px"><span class="hn-meta">342 points · 127 comments · 3h ago</span></div>
+            <div class="hn-item"><span class="hn-rank">2.</span><span class="hn-title">Redis vector search 2.0 released</span></div>
+            <div class="hn-item" style="padding-left:28px"><span class="hn-meta">218 points · 89 comments · 5h ago</span></div>
+            <div class="hn-item"><span class="hn-rank">3.</span><span class="hn-title">Why AI agents need better memory</span></div>
+            <div class="hn-item" style="padding-left:28px"><span class="hn-meta">156 points · 64 comments · 6h ago</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Improvement Chart -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span>📈</span> Self-Improvement
+          </div>
+          <span style="font-size:10px;color:var(--green);font-weight:600">↑ 60% improvement</span>
+        </div>
+        <div class="chart-container">
+          <div class="chart-bar-wrap">
+            <div class="chart-bar" style="height:20%;background:var(--red)"></div>
+            <div class="chart-bar" style="height:20%;background:var(--red)"></div>
+            <div class="chart-bar" style="height:45%;background:var(--orange)"></div>
+            <div class="chart-bar" style="height:60%;background:var(--orange)"></div>
+            <div class="chart-bar" style="height:75%;background:var(--green)"></div>
+            <div class="chart-bar" style="height:80%;background:var(--green)"></div>
+            <div class="chart-bar" style="height:80%;background:var(--green)"></div>
+            <div class="chart-bar" style="height:90%;background:var(--green)"></div>
+            <div class="chart-bar" style="height:100%;background:var(--accent);animation:glow 2s infinite"></div>
+          </div>
+          <div class="chart-labels">
+            <span>Task 1</span>
+            <span>Task 5</span>
+            <span>Task 9</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Sponsor Bar ─── -->
+  <div class="sponsor-bar">
+    <div class="sponsor-item active" title="Weave by W&B — Traces & Observability">
+      <span class="sponsor-dot" style="background:var(--orange)"></span> Weave
+    </div>
+    <div class="sponsor-item active" title="Redis — Memory & Vector Search">
+      <span class="sponsor-dot" style="background:var(--red)"></span> Redis
+    </div>
+    <div class="sponsor-item active" title="Browserbase — Web Automation">
+      <span class="sponsor-dot" style="background:var(--cyan)"></span> Browserbase
+    </div>
+    <div class="sponsor-item active" title="Daily — Voice AI">
+      <span class="sponsor-dot" style="background:var(--blue)"></span> Daily
+    </div>
+    <div class="sponsor-item active" title="Vercel — Deployment">
+      <span class="sponsor-dot" style="background:#fff"></span> Vercel
+    </div>
+    <div class="sponsor-item active" title="Marimo — Notebooks">
+      <span class="sponsor-dot" style="background:var(--green)"></span> Marimo
+    </div>
+    <div class="sponsor-item active" title="Google Cloud — Inference">
+      <span class="sponsor-dot" style="background:var(--blue)"></span> Google Cloud
+    </div>
+  </div>
+</div>
+</body>
+</html>
