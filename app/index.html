@@ -442,22 +442,40 @@ a { color:var(--gold); text-decoration:none; }
   position:fixed; bottom:0; left:50%; z-index:260;
   width:100%; max-width:600px; transform:translate(-50%, 100%);
   background:var(--white); border-radius:20px 20px 0 0;
-  max-height:80dvh; display:flex; flex-direction:column;
+  height:85dvh; display:flex; flex-direction:column;
   box-shadow:0 -8px 40px rgba(0,0,0,0.12);
   transition:transform 0.35s var(--ease-out);
+  touch-action:none;
 }
 .bottom-sheet.show { transform:translate(-50%, 0); }
+/* Dragged-up state — full height */
+.bottom-sheet.expanded { height:95dvh; border-radius:8px 8px 0 0; }
+.bottom-sheet-handle-area {
+  display:flex; align-items:center; justify-content:center;
+  padding:10px 0 2px; cursor:grab; flex-shrink:0;
+}
 .bottom-sheet-handle {
   width:36px; height:4px; border-radius:2px; background:var(--stone);
-  margin:10px auto 0;
 }
 .bottom-sheet-header {
-  padding:16px 24px 12px; display:flex; align-items:center; justify-content:space-between;
+  padding:10px 20px 10px; display:flex; align-items:center; justify-content:space-between;
   border-bottom:1px solid var(--border); flex-shrink:0;
 }
+.bottom-sheet-header-left { display:flex; align-items:center; gap:8px; }
 .bottom-sheet-title { font-family:'Instrument Serif',serif; font-size:18px; color:var(--dark); }
+.bottom-sheet-header-actions { display:flex; align-items:center; gap:2px; }
+.bs-icon-btn {
+  width:36px; height:36px; border-radius:50%; display:flex; align-items:center;
+  justify-content:center; transition:all 0.12s; color:var(--muted);
+}
+.bs-icon-btn:hover { background:var(--cream); color:var(--dark); }
+.bs-icon-btn:active { transform:scale(0.88); background:var(--stone); }
+.bs-icon-btn.copied { color:var(--sage); }
+.bs-icon-btn.danger { color:#D14; }
+.bs-icon-btn.danger:hover { background:rgba(221,17,68,0.06); }
+.bs-icon-btn svg { width:18px; height:18px; }
 .bottom-sheet-close {
-  width:32px; height:32px; border-radius:50%;
+  width:36px; height:36px; border-radius:50%;
   display:flex; align-items:center; justify-content:center;
   font-size:16px; color:var(--muted); transition:all 0.1s;
 }
@@ -479,21 +497,19 @@ a { color:var(--gold); text-decoration:none; }
   margin-top:16px; padding-top:14px; border-top:1px solid var(--border);
   display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted-light);
 }
-.bottom-sheet-actions {
-  display:flex; gap:10px; padding:16px 24px; border-top:1px solid var(--border);
-  flex-shrink:0; padding-bottom:calc(16px + var(--safe-bottom));
+
+/* Desktop: slide from right instead of bottom */
+@media (min-width:640px) {
+  .bottom-sheet {
+    left:auto; right:0; bottom:0; top:0;
+    width:380px; max-width:65%; height:100% !important;
+    border-radius:0; transform:translate(100%,0);
+    box-shadow:-8px 0 40px rgba(0,0,0,0.12);
+  }
+  .bottom-sheet.show { transform:translate(0,0); }
+  .bottom-sheet.expanded { height:100% !important; border-radius:0; }
+  .bottom-sheet-handle-area { display:none; }
 }
-.bottom-sheet-actions button {
-  flex:1; padding:12px; border-radius:var(--radius-sm); font-size:14px; font-weight:600;
-  display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.15s;
-}
-.bs-copy { background:var(--cream); color:var(--dark); }
-.bs-copy:hover { background:var(--stone); }
-.bs-copy:active { transform:scale(0.96); }
-.bs-copy.copied { background:rgba(163,177,138,0.15); color:var(--sage); }
-.bs-delete { background:rgba(221,17,68,0.06); color:#D14; }
-.bs-delete:hover { background:rgba(221,17,68,0.12); }
-.bs-delete:active { transform:scale(0.96); }
 
 /* Chat empty state */
 .chat-empty {
@@ -695,16 +711,24 @@ a { color:var(--gold); text-decoration:none; }
   <!-- Memory bottom sheet -->
   <div class="bottom-sheet-backdrop" id="memSheetBackdrop" onclick="closeMemSheet()"></div>
   <div class="bottom-sheet" id="memSheet">
-    <div class="bottom-sheet-handle"></div>
+    <div class="bottom-sheet-handle-area" id="sheetHandleArea">
+      <div class="bottom-sheet-handle"></div>
+    </div>
     <div class="bottom-sheet-header">
-      <div class="bottom-sheet-title">Memory</div>
-      <button class="bottom-sheet-close" onclick="closeMemSheet()">✕</button>
+      <div class="bottom-sheet-header-left">
+        <div class="bottom-sheet-title">Memory</div>
+      </div>
+      <div class="bottom-sheet-header-actions">
+        <button class="bs-icon-btn" id="memCopyBtn" onclick="copyMemory()" title="Copy">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        </button>
+        <button class="bs-icon-btn danger" onclick="confirmDeleteMemory()" title="Delete">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+        </button>
+        <button class="bottom-sheet-close" onclick="closeMemSheet()">✕</button>
+      </div>
     </div>
     <div class="bottom-sheet-body" id="memSheetBody"></div>
-    <div class="bottom-sheet-actions">
-      <button class="bs-copy" id="memCopyBtn" onclick="copyMemory()">📋 Copy</button>
-      <button class="bs-delete" onclick="confirmDeleteMemory()">🗑 Delete</button>
-    </div>
   </div>
 
   <!-- Preview overlay -->
@@ -1251,11 +1275,11 @@ function copyMemory() {
   var plain = activeMemory.title + '\n\n' + activeMemory.body.replace(/<[^>]+>/g, '');
   navigator.clipboard.writeText(plain).then(function() {
     var btn = document.getElementById('memCopyBtn');
-    btn.textContent = '✓ Copied';
     btn.classList.add('copied');
+    btn.innerHTML = '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
     setTimeout(function() {
-      btn.textContent = '📋 Copy';
       btn.classList.remove('copied');
+      btn.innerHTML = '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
     }, 2000);
   });
 }
@@ -1287,6 +1311,47 @@ function doDeleteMemory() {
   closeMemSheet();
   renderMemories();
 }
+
+// ─── Sheet drag (mobile) ───
+(function() {
+  var sheet = document.getElementById('memSheet');
+  var handle = document.getElementById('sheetHandleArea');
+  var startY = 0, currentY = 0, dragging = false;
+
+  handle.addEventListener('touchstart', function(e) {
+    startY = e.touches[0].clientY;
+    currentY = startY;
+    dragging = true;
+    sheet.style.transition = 'none';
+  }, {passive:true});
+
+  document.addEventListener('touchmove', function(e) {
+    if (!dragging) return;
+    currentY = e.touches[0].clientY;
+    var dy = currentY - startY;
+    // Only allow dragging down (positive dy) to dismiss
+    if (dy > 0) {
+      sheet.style.transform = 'translate(-50%, ' + dy + 'px)';
+    }
+  }, {passive:true});
+
+  document.addEventListener('touchend', function() {
+    if (!dragging) return;
+    dragging = false;
+    sheet.style.transition = '';
+    var dy = currentY - startY;
+    if (dy > 100) {
+      // Dismiss
+      closeMemSheet();
+    } else {
+      // Snap back
+      sheet.style.transform = '';
+      if (sheet.classList.contains('show')) {
+        sheet.style.transform = 'translate(-50%, 0)';
+      }
+    }
+  }, {passive:true});
+})();
 
 // Close sheet on ESC
 document.addEventListener('keydown', function(e) {
