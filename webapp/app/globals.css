@@ -1,0 +1,134 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #F5F0EB;
+  --color-charcoal: #2D2A26;
+  --color-sage: #A3B18A;
+  --color-gold: #C9A96E;
+  --color-gold-light: #e8d5b0;
+  --color-app-white: #FAFAF8;
+  --color-dark: #1A1A1A;
+  --color-stone: #E8E0D8;
+  --color-stone-light: #efe8e0;
+  --color-muted: #7A746D;
+  --color-muted-light: #9E9891;
+  --color-app-border: rgba(0,0,0,0.08);
+
+  --font-heading: 'Instrument Serif', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --radius-lg: 16px;
+  --radius-sm: 10px;
+
+  --ease-smooth: cubic-bezier(0.22,1,0.36,1);
+  --ease-out: cubic-bezier(0.16,1,0.3,1);
+}
+
+*, *::before, *::after {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-cream);
+  color: var(--color-dark);
+  line-height: 1.5;
+  touch-action: manipulation;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+  outline: none;
+}
+
+input, textarea {
+  font-family: inherit;
+  border: none;
+  outline: none;
+}
+
+a {
+  color: var(--color-gold);
+  text-decoration: none;
+}
+
+/* Quote blocks in formatted text */
+.quote-block {
+  border-left: 3px solid var(--color-gold);
+  padding: 8px 14px;
+  margin: 8px 0;
+  color: var(--color-muted);
+  font-style: italic;
+  background: rgba(201,169,110,0.06);
+  border-radius: 0 6px 6px 0;
+}
+
+/* Streaming cursor */
+.streaming-cursor {
+  display: inline;
+  animation: blink 1s step-end infinite;
+  color: var(--color-gold);
+  font-weight: 300;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-5px); }
+}
+
+@keyframes sendPop {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.82); }
+  100% { transform: scale(1); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-5px); }
+}
+
+.send-pop {
+  animation: sendPop 0.3s cubic-bezier(0.22,1,0.36,1);
+}
+
+/* Scrollbar hiding */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Thin scrollbar for messages */
+.thin-scrollbar::-webkit-scrollbar { width: 3px; }
+.thin-scrollbar::-webkit-scrollbar-thumb { background: var(--color-stone); border-radius: 3px; }
+
+/* Desktop layout */
+@media (min-width: 640px) {
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-cream);
+  }
+}
