@@ -3,12 +3,6 @@
 import { useState, useEffect, useRef, useCallback, FormEvent } from 'react'
 import s from './landing.module.css'
 
-const CheckIcon = () => (
-  <svg viewBox="0 0 16 16" fill="currentColor">
-    <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z" />
-  </svg>
-)
-
 const PlusIcon = () => (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
     <line x1="7" y1="2" x2="7" y2="12" />
@@ -317,65 +311,6 @@ export default function LandingPage() {
                 <span className={s.creatorTaskTag}>Quiz creation</span>
                 <span className={s.creatorTaskTag}>Research</span>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ==================== PRICING ==================== */}
-      <section className={s.pricing} id="pricing">
-        <div className={s.container}>
-          <div className={s.pricingHeader}>
-            <div className={`${s.sectionLabel} ${s.reveal}`}>Pricing</div>
-            <h2 className={`${s.sectionTitle} ${s.reveal} ${s.revealDelay1}`}>Simple, honest pricing</h2>
-            <p className={`${s.sectionSubtitle} ${s.reveal} ${s.revealDelay2}`}>
-              Start free. Upgrade when your agent becomes indispensable (it will).
-            </p>
-          </div>
-          <div className={s.pricingGrid}>
-            {/* Free */}
-            <div className={`${s.pricingCard} ${s.reveal}`}>
-              <div className={`${s.pricingBadge} ${s.pricingBadgeNormal}`}>Starter</div>
-              <h3>Free</h3>
-              <div className={s.pricingPrice}>$0 <span className={s.pricingPeriod}>/mo</span></div>
-              <p className={s.pricingDesc}>Try it out. No credit card needed.</p>
-              <ul className={s.pricingFeatures}>
-                <li className={s.pricingFeatureItem}><span className={`${s.pricingCheck} ${s.pricingCheckNormal}`}><CheckIcon /></span>50 messages/month</li>
-                <li className={s.pricingFeatureItem}><span className={`${s.pricingCheck} ${s.pricingCheckNormal}`}><CheckIcon /></span>Basic memory</li>
-                <li className={s.pricingFeatureItem}><span className={`${s.pricingCheck} ${s.pricingCheckNormal}`}><CheckIcon /></span>Web research</li>
-                <li className={s.pricingFeatureItem}><span className={`${s.pricingCheck} ${s.pricingCheckNormal}`}><CheckIcon /></span>WhatsApp access</li>
-              </ul>
-              <button className={`${s.pricingCta} ${s.pricingCtaNormal}`}>Get Started</button>
-            </div>
-            {/* Creator */}
-            <div className={`${s.pricingCard} ${s.pricingCardFeatured} ${s.reveal} ${s.revealDelay1}`}>
-              <div className={`${s.pricingBadge} ${s.pricingBadgeFeatured}`}>Most Popular</div>
-              <h3>Creator</h3>
-              <div className={s.pricingPrice}>$29 <span className={s.pricingPeriod}>/mo</span></div>
-              <p className={s.pricingDesc}>For creators who mean business.</p>
-              <ul className={s.pricingFeatures}>
-                <li className={s.pricingFeatureItem}><span className={`${s.pricingCheck} ${s.pricingCheckFeatured}`}><CheckIcon /></span>Unlimited messages</li>
-                <li className={s.pricingFeatureItem}><span className={`${s.pricingCheck} ${s.pricingCheckFeatured}`}><CheckIcon /></span>Full persistent memory</li>
-                <li className={s.pricingFeatureItem}><span className={`${s.pricingCheck} ${s.pricingCheckFeatured}`}><CheckIcon /></span>File management</li>
-                <li className={s.pricingFeatureItem}><span className={`${s.pricingCheck} ${s.pricingCheckFeatured}`}><CheckIcon /></span>Priority speed</li>
-                <li className={s.pricingFeatureItem}><span className={`${s.pricingCheck} ${s.pricingCheckFeatured}`}><CheckIcon /></span>Creator workflows</li>
-              </ul>
-              <button className={`${s.pricingCta} ${s.pricingCtaFeatured}`}>Join Waitlist</button>
-            </div>
-            {/* Pro */}
-            <div className={`${s.pricingCard} ${s.reveal} ${s.revealDelay2}`}>
-              <div className={`${s.pricingBadge} ${s.pricingBadgeNormal}`}>Power User</div>
-              <h3>Pro</h3>
-              <div className={s.pricingPrice}>$49 <span className={s.pricingPeriod}>/mo</span></div>
-              <p className={s.pricingDesc}>For teams and heavy workflows.</p>
-              <ul className={s.pricingFeatures}>
-                <li className={s.pricingFeatureItem}><span className={`${s.pricingCheck} ${s.pricingCheckNormal}`}><CheckIcon /></span>Everything in Creator</li>
-                <li className={s.pricingFeatureItem}><span className={`${s.pricingCheck} ${s.pricingCheckNormal}`}><CheckIcon /></span>Multi-agent workflows</li>
-                <li className={s.pricingFeatureItem}><span className={`${s.pricingCheck} ${s.pricingCheckNormal}`}><CheckIcon /></span>API integrations</li>
-                <li className={s.pricingFeatureItem}><span className={`${s.pricingCheck} ${s.pricingCheckNormal}`}><CheckIcon /></span>Custom agent training</li>
-                <li className={s.pricingFeatureItem}><span className={`${s.pricingCheck} ${s.pricingCheckNormal}`}><CheckIcon /></span>Dedicated support</li>
-              </ul>
-              <button className={`${s.pricingCta} ${s.pricingCtaNormal}`}>Join Waitlist</button>
             </div>
           </div>
         </div>
