@@ -1,4 +1,4 @@
-import { BusinessInfo, BusinessAnalysis, Workflow, PainPoint, EvalMetric } from './types';
+import { BusinessInfo, BusinessAnalysis, Workflow } from './types';
 import { mockAnalysis } from './mockData-discover';
 
 function generateWorkflowId(): string {
@@ -80,8 +80,14 @@ Return ONLY valid JSON, no markdown fences or extra text.`;
  * Analyze business using Claude API
  */
 async function analyzeBusinessReal(business: BusinessInfo): Promise<BusinessAnalysis> {
-  // @ts-ignore
-  const Anthropic = (await import('@anthropic-ai/sdk')).default;
+  let Anthropic: any;
+  try {
+    Anthropic = require('@anthropic-ai/sdk').default || require('@anthropic-ai/sdk');
+  } catch {
+    console.warn('Anthropic SDK not available, falling back to mock');
+    return analyzeBusinessMock(business);
+  }
+
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   const prompt = ANALYSIS_PROMPT.replace('{BUSINESS_DATA}', JSON.stringify(business, null, 2));

@@ -5,14 +5,16 @@ const memoryStore = new Map<string, string>();
 
 // Try to use Redis if available, otherwise fall back to in-memory
 let redisClient: any = null;
+let redisAttempted = false;
 
 async function getRedis() {
   if (redisClient) return redisClient;
+  if (redisAttempted) return null;
+  redisAttempted = true;
 
   try {
-    // @ts-ignore - redis may not be installed
-    const { createClient } = await import('redis');
-    const client = createClient({
+    const redis = require('redis');
+    const client = redis.createClient({
       url: process.env.REDIS_URL || 'redis://localhost:6379',
     });
     client.on('error', () => {
@@ -29,27 +31,35 @@ async function getRedis() {
 async function setKey(key: string, value: string, ttl?: number): Promise<void> {
   const redis = await getRedis();
   if (redis) {
-    if (ttl) {
-      await redis.set(key, value, { EX: ttl });
-    } else {
-      await redis.set(key, value);
+    try {
+      if (ttl) {
+        await redis.set(key, value, { EX: ttl });
+      } else {
+        await redis.set(key, value);
+      }
+      return;
+    } catch {
+      // Fall through to memory store
     }
-  } else {
-    memoryStore.set(key, value);
   }
+  memoryStore.set(key, value);
 }
 
 async function getKey(key: string): Promise<string | null> {
   const redis = await getRedis();
   if (redis) {
-    return await redis.get(key);
+    try {
+      return await redis.get(key);
+    } catch {
+      // Fall through to memory store
+    }
   }
   return memoryStore.get(key) || null;
 }
 
 // Business operations
 export async function storeBusiness(business: BusinessInfo): Promise<void> {
-  await setKey(`business:${business.id}`, JSON.stringify(business), 86400); // 24h TTL
+  await setKey(`business:${business.id}`, JSON.stringify(business), 86400);
 }
 
 export async function getBusiness(businessId: string): Promise<BusinessInfo | null> {
