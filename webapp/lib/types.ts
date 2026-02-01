@@ -109,6 +109,15 @@ export interface EvalMetric {
   measurement: string;
 }
 
+export interface EvalTestCase {
+  name: string;
+  scenario: string;
+  input: string;
+  expected_behavior: string;
+  scoring: 'exact_match' | 'contains_keyword' | 'sentiment_positive' | 'response_under_seconds' | 'llm_judge';
+  target: number | boolean;
+}
+
 export interface Workflow {
   id: string;
   business_id: string;
@@ -119,6 +128,7 @@ export interface Workflow {
   user_facing: boolean;
   actions: string[];
   eval_metrics: EvalMetric[];
+  eval_harness: EvalTestCase[];
   status: 'suggested' | 'active' | 'paused' | 'archived';
   feedback?: {
     thumbs_up: number;

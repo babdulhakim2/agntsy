@@ -716,20 +716,63 @@ function WorkflowCard({
         ))}
       </div>
 
-      {/* Eval Metrics */}
-      <div style={styles.wfMetrics}>
-        <div style={{ color: '#6B6B80', fontSize: 12, marginBottom: 6, fontWeight: 500 }}>Eval Metrics:</div>
-        <div style={styles.wfMetricsGrid}>
-          {workflow.eval_metrics.map((m, i) => (
-            <div key={i} style={styles.wfMetricTag}>
-              <div style={{ fontWeight: 500, color: '#E8E8F0', fontSize: 12 }}>{m.name}</div>
-              {m.target && (
-                <div style={{ color: '#34D399', fontSize: 11 }}>Target: {m.target}</div>
-              )}
-            </div>
-          ))}
+      {/* Eval Harness — Runnable Test Cases */}
+      {workflow.eval_harness && workflow.eval_harness.length > 0 ? (
+        <div style={styles.wfMetrics}>
+          <div style={{ color: '#6B6B80', fontSize: 12, marginBottom: 8, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ color: '#7C5CFC' }}>⚡</span> Eval Harness — {workflow.eval_harness.length} Test Cases
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {workflow.eval_harness.map((e: any, i: number) => (
+              <div key={i} style={{
+                padding: '10px 12px',
+                background: '#1A1A26',
+                borderRadius: 8,
+                border: '1px solid #2A2A3A',
+                borderLeft: '3px solid #7C5CFC',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <div style={{ fontWeight: 600, color: '#E8E8F0', fontSize: 12 }}>{e.name}</div>
+                  <span style={{
+                    padding: '2px 8px',
+                    background: 'rgba(124, 92, 252, 0.12)',
+                    color: '#7C5CFC',
+                    borderRadius: 4,
+                    fontSize: 10,
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}>
+                    {e.scoring}
+                  </span>
+                </div>
+                <div style={{ fontSize: 12, color: '#B8B8CC', lineHeight: 1.5, marginBottom: 4 }}>{e.scenario}</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: 11, color: '#6B6B80' }}>
+                    <span style={{ color: '#22D3EE' }}>input:</span> {e.input?.slice(0, 80)}{e.input?.length > 80 ? '...' : ''}
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, color: '#34D399', marginTop: 3 }}>
+                  ✓ Expected: {e.expected_behavior?.slice(0, 100)}{e.expected_behavior?.length > 100 ? '...' : ''}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : (
+        /* Fallback: Legacy eval_metrics */
+        <div style={styles.wfMetrics}>
+          <div style={{ color: '#6B6B80', fontSize: 12, marginBottom: 6, fontWeight: 500 }}>Eval Metrics:</div>
+          <div style={styles.wfMetricsGrid}>
+            {workflow.eval_metrics.map((m: any, i: number) => (
+              <div key={i} style={styles.wfMetricTag}>
+                <div style={{ fontWeight: 500, color: '#E8E8F0', fontSize: 12 }}>{m.name}</div>
+                {m.target && (
+                  <div style={{ color: '#34D399', fontSize: 11 }}>Target: {m.target}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Feedback */}
       <div style={styles.wfFeedback}>
