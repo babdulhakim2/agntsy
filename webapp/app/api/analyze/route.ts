@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     // Try real AI analysis if we have reviews
     const business = businessData || (businessId ? await getBusiness(businessId) : null)
 
-    if (business && business.reviews && business.reviews.length > 0 && process.env.OPENAI_API_KEY) {
+    if (business && process.env.OPENAI_API_KEY) {
       try {
         console.log(`[Analyze] Running AI analysis on ${business.reviews.length} reviews for "${business.name}"`)
         const analysis = await analyzeBusinessReviews(business)

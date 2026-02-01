@@ -41,21 +41,24 @@ IMPORTANT: Make workflows creative, specific to the business type, and actionabl
 Return ONLY valid JSON matching this schema. No markdown, no explanation.`
 
 export async function analyzeBusinessReviews(business: BusinessInfo): Promise<BusinessAnalysis> {
-  const reviewsText = business.reviews
-    .map(r => `[${r.rating}★ - ${r.author}, ${r.date}]: "${r.text}"`)
-    .join('\n')
+  const hasReviews = business.reviews && business.reviews.length > 0
+  const reviewsText = hasReviews
+    ? business.reviews.map(r => `[${r.rating}★ - ${r.author}, ${r.date}]: "${r.text}"`).join('\n')
+    : '(No individual reviews scraped — analyze based on business type, rating, and common pain points for this industry)'
 
   const userPrompt = `Business: ${business.name}
 Type: ${business.type}
-Rating: ${business.rating}/5 (${business.review_count} reviews)
+Rating: ${business.rating}/5 (${business.review_count} reviews total on Google Maps)
 Address: ${business.address}
+${business.phone ? `Phone: ${business.phone}` : ''}
+${business.website ? `Website: ${business.website}` : ''}
 ${business.price_level ? `Price Level: ${business.price_level}` : ''}
 ${business.hours ? `Hours: ${business.hours}` : ''}
 
-Reviews (${business.reviews.length} scraped):
+${hasReviews ? `Reviews (${business.reviews.length} scraped):` : 'No individual reviews available. Based on the business type, rating, and industry standards, infer likely pain points and generate workflows.'}
 ${reviewsText}
 
-Analyze these reviews and generate AI workflow recommendations.`
+Analyze this business and generate AI workflow recommendations that would help them improve operations and customer experience.`
 
   const response = await openai.chat.completions.create({
     model: 'gpt-4o',

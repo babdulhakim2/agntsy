@@ -21,141 +21,174 @@ export async function scrapeWithStagehand(mapsUrl: string): Promise<ScrapeResult
   })
 
   await stagehand.init()
+
+  const sessionId = stagehand.browserbaseSessionId
+  const sessionUrl = sessionId
+    ? `https://www.browserbase.com/sessions/${sessionId}`
+    : undefined
+  console.log(`[Stagehand] Session: ${sessionUrl || 'unknown'}`)
+
   const page = stagehand.context.pages()[0]
 
   try {
-    // Navigate to Google Maps URL
-    await page.goto(mapsUrl, { waitUntil: 'domcontentloaded', timeout: 30000 })
-    await page.waitForTimeout(8000)
+    await page.goto(mapsUrl, { waitUntil: 'domcontentloaded', timeout: 45000 })
+    await page.waitForTimeout(12000)
 
-    // If it's a search results page, click the first result
+    // Dismiss consent dialogs
+    try {
+      const btn = page.locator('button:has-text("Accept all"), form[action*="consent"] button')
+      if (await btn.count() > 0) { await btn.first().click(); await page.waitForTimeout(3000) }
+    } catch {}
+
     const title = await page.title()
-    if (!title.includes(' - Google Maps') || title === 'Google Maps') {
+    console.log(`[Stagehand] Title: "${title}"`)
+
+    // Click first result if on search page
+    if (title === 'Google Maps' || !title.includes(' - Google Maps')) {
       try {
-        await stagehand.act('Click on the first business result in the list on the left side')
-        await page.waitForTimeout(5000)
-      } catch {
-        // Already on a place page
-      }
-    }
-
-    // Extract business info
-    const info = await stagehand.extract(
-      'Extract the business name, business type/category, star rating (number), total number of reviews, full address, phone number, website URL, price level (like $ or $$), and business hours from this Google Maps listing.',
-      z.object({
-        name: z.string(),
-        type: z.string(),
-        rating: z.number(),
-        review_count: z.number(),
-        address: z.string(),
-        phone: z.string().optional(),
-        website: z.string().optional(),
-        price_level: z.string().optional(),
-        hours: z.string().optional(),
-      })
-    )
-
-    // Click on Reviews tab
-    await stagehand.act('Click on the Reviews tab or reviews section')
-    await page.waitForTimeout(3000)
-
-    // Sort by newest first
-    try {
-      await stagehand.act('Click the sort button and select "Newest" to sort reviews by newest first')
-      await page.waitForTimeout(3000)
-    } catch {
-      // Sort might not be available
-    }
-
-    // Scroll to load more reviews
-    for (let i = 0; i < 3; i++) {
-      await stagehand.act('Scroll down in the reviews panel to load more reviews')
-      await page.waitForTimeout(1500)
-    }
-
-    // Extract reviews
-    const reviewData = await stagehand.extract(
-      'Extract all visible reviews. For each review get: the reviewer name, their star rating (1-5), when they posted it (like "2 weeks ago"), and the full review text.',
-      z.object({
-        reviews: z.array(z.object({
-          author: z.string(),
-          rating: z.number(),
-          date: z.string(),
-          text: z.string(),
-        }))
-      })
-    )
-
-    // Now sort by lowest rating
-    let lowestReviews: typeof reviewData.reviews = []
-    try {
-      await stagehand.act('Click the sort button and select "Lowest rating" to sort by lowest rated reviews')
-      await page.waitForTimeout(3000)
-
-      // Scroll to load more
-      for (let i = 0; i < 2; i++) {
-        await stagehand.act('Scroll down in the reviews panel to load more reviews')
-        await page.waitForTimeout(1500)
-      }
-
-      const lowestData = await stagehand.extract(
-        'Extract all visible reviews. For each review get: the reviewer name, their star rating (1-5), when they posted it, and the full review text.',
-        z.object({
-          reviews: z.array(z.object({
-            author: z.string(),
-            rating: z.number(),
-            date: z.string(),
-            text: z.string(),
-          }))
+        await page.evaluate(() => {
+          const firstResult = document.querySelector('[role="feed"] > div a, .Nv2PK a, a[href*="/maps/place/"]')
+          if (firstResult) (firstResult as HTMLElement).click()
         })
-      )
-      lowestReviews = lowestData.reviews || []
-    } catch {
-      // Lowest sort failed, continue with what we have
+        await page.waitForTimeout(6000)
+      } catch {}
     }
 
-    // Combine and dedupe reviews
-    const allReviews = [...(reviewData.reviews || []), ...lowestReviews]
-    const seen = new Set<string>()
-    const reviews: Review[] = allReviews
-      .filter(r => {
-        const key = `${r.author}-${r.text.slice(0, 50)}`
-        if (seen.has(key)) return false
-        seen.add(key)
-        return true
+    // ─── Extract business info via targeted DOM selectors ───
+    const info = await page.evaluate(() => {
+      const name = document.querySelector('h1')?.textContent?.trim() || ''
+
+      // Rating from aria-label
+      const rLabel = document.querySelector('[role="img"][aria-label*="star"]')?.getAttribute('aria-label') || ''
+      const rm = rLabel.match(/([\d.]+)/)
+      const rating = rm ? parseFloat(rm[1]) : 0
+
+      // Review count — scan buttons/spans for "X reviews"
+      let reviewCount = 0
+      document.querySelectorAll('button,span,a').forEach(el => {
+        const t = el.textContent || ''
+        const m = t.match(/([\d,]+)\s*reviews?/i)
+        if (m && !reviewCount) reviewCount = parseInt(m[1].replace(/,/g, ''))
       })
-      .map(r => ({
+
+      // Category/type
+      let type = ''
+      const typeBtn = document.querySelector('button[jsaction*="category"]')
+      if (typeBtn) type = typeBtn.textContent?.trim() || ''
+      if (!type) {
+        document.querySelectorAll('span,button').forEach(el => {
+          const t = el.textContent?.trim() || ''
+          if (/^(Coffee shop|Restaurant|Cafe|Bar|Bakery|Hotel|Store|Shop|Gym|Salon|Spa|Clinic|Dentist|Agency|Studio)/i.test(t)) {
+            if (!type) type = t
+          }
+        })
+      }
+
+      // Address
+      let address = ''
+      const addrEl = document.querySelector('[data-item-id="address"] .Io6YTe') ||
+        document.querySelector('button[data-item-id="address"]')
+      if (addrEl) address = addrEl.textContent?.trim() || ''
+
+      // Phone
+      let phone = ''
+      const phoneEl = document.querySelector('[data-item-id*="phone"] .Io6YTe') ||
+        document.querySelector('button[data-item-id*="phone"]')
+      if (phoneEl) phone = phoneEl.textContent?.trim() || ''
+
+      // Website
+      let website = ''
+      const wEl = document.querySelector('a[data-item-id="authority"]')
+      if (wEl) website = wEl.getAttribute('href') || ''
+
+      // Hours
+      let hours = ''
+      const hEl = document.querySelector('[aria-label*="Monday"]')
+      if (hEl) {
+        const full = hEl.getAttribute('aria-label') || ''
+        // Trim the long hours string
+        hours = full.length > 200 ? full.slice(0, 200) + '...' : full
+      }
+
+      // Price level
+      let priceLevel = ''
+      document.querySelectorAll('[aria-label*="Price"]').forEach(el => {
+        priceLevel = el.textContent?.trim() || ''
+      })
+
+      return { name, rating, reviewCount, type, address, phone, website, hours, priceLevel }
+    })
+
+    console.log(`[Stagehand] Extracted: "${info.name}" ${info.rating}★ (${info.reviewCount} reviews)`)
+
+    // ─── Extract visible review snippets from overview ───
+    let reviews: Review[] = []
+
+    try {
+      // Try clicking the star rating area to open reviews panel
+      try {
+        const ratingEl = page.locator('[role="img"][aria-label*="star"]').first()
+        await ratingEl.click({ timeout: 5000 })
+        await page.waitForTimeout(5000)
+      } catch {}
+
+      // Extract any reviews visible on the page
+      const domReviews = await page.evaluate(() => {
+        const results: Array<{ author: string; rating: number; date: string; text: string }> = []
+        // Try standard review selectors
+        document.querySelectorAll('[data-review-id], .jftiEf').forEach(el => {
+          const author = el.querySelector('.d4r55')?.textContent?.trim() || ''
+          const rLabel = el.querySelector('[role="img"][aria-label*="star"]')?.getAttribute('aria-label') || ''
+          const rm = rLabel.match(/(\d)/)
+          const rating = rm ? parseInt(rm[1]) : 0
+          const date = el.querySelector('.rsqaWe')?.textContent?.trim() || ''
+          const text = el.querySelector('.wiI7pd')?.textContent?.trim() || ''
+          if (author && (text || rating)) results.push({ author, rating, date, text })
+        })
+        return results
+      })
+
+      reviews = domReviews.map(r => ({
         ...r,
         sentiment: r.rating >= 4 ? 'positive' as const
           : r.rating <= 2 ? 'negative' as const
           : 'neutral' as const,
       }))
+      console.log(`[Stagehand] Reviews from DOM: ${reviews.length}`)
+    } catch (err) {
+      console.error('[Stagehand] Reviews failed:', err)
+    }
 
     const business: BusinessInfo = {
       id: generateId(),
       name: info.name || 'Unknown Business',
       type: info.type || 'Business',
       rating: info.rating || 0,
-      review_count: info.review_count || 0,
+      review_count: info.reviewCount || reviews.length || 0,
       address: info.address || '',
       phone: info.phone || undefined,
       website: info.website || undefined,
       hours: info.hours || undefined,
-      price_level: info.price_level || undefined,
+      price_level: info.priceLevel || undefined,
       maps_url: mapsUrl,
       scraped_at: new Date().toISOString(),
       reviews,
     }
 
-    const sessionId = stagehand.browserbaseSessionId
-    const sessionUrl = stagehand.browserbaseSessionURL
+    console.log(`[Stagehand] Done: "${business.name}" — ${reviews.length} reviews scraped`)
 
     return {
       business,
       browserbaseSessionId: sessionId,
       browserbaseSessionUrl: sessionUrl,
     }
+  } catch (err) {
+    console.error('[Stagehand] Fatal:', err)
+    throw Object.assign(err as Error, {
+      browserbaseSessionId: sessionId,
+      browserbaseSessionUrl: sessionUrl,
+    })
   } finally {
-    await stagehand.close()
+    await stagehand.close().catch(() => {})
   }
 }
