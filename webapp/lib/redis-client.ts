@@ -1,113 +1,37 @@
-import { BusinessInfo, BusinessAnalysis, Workflow } from './types';
+// In-memory store (Redis integration TODO when key available)
+const store = new Map<string, string>()
 
-// In-memory fallback store (used when Redis is unavailable)
-const memoryStore = new Map<string, string>();
-
-// Try to use Redis if available, otherwise fall back to in-memory
-let redisClient: any = null;
-let redisAttempted = false;
-
-async function getRedis() {
-  if (redisClient) return redisClient;
-  if (redisAttempted) return null;
-  redisAttempted = true;
-
-  try {
-    const redis = require('redis');
-    const client = redis.createClient({
-      url: process.env.REDIS_URL || 'redis://localhost:6379',
-    });
-    client.on('error', () => {
-      redisClient = null;
-    });
-    await client.connect();
-    redisClient = client;
-    return client;
-  } catch {
-    return null;
-  }
+async function set(key: string, value: string): Promise<void> {
+  store.set(key, value)
 }
 
-async function setKey(key: string, value: string, ttl?: number): Promise<void> {
-  const redis = await getRedis();
-  if (redis) {
-    try {
-      if (ttl) {
-        await redis.set(key, value, { EX: ttl });
-      } else {
-        await redis.set(key, value);
-      }
-      return;
-    } catch {
-      // Fall through to memory store
-    }
-  }
-  memoryStore.set(key, value);
+async function get(key: string): Promise<string | null> {
+  return store.get(key) || null
 }
 
-async function getKey(key: string): Promise<string | null> {
-  const redis = await getRedis();
-  if (redis) {
-    try {
-      return await redis.get(key);
-    } catch {
-      // Fall through to memory store
-    }
-  }
-  return memoryStore.get(key) || null;
+export async function storeBusiness(id: string, data: unknown): Promise<void> {
+  await set(`business:${id}`, JSON.stringify(data))
 }
 
-// Business operations
-export async function storeBusiness(business: BusinessInfo): Promise<void> {
-  await setKey(`business:${business.id}`, JSON.stringify(business), 86400);
+export async function getBusiness(id: string): Promise<unknown | null> {
+  const d = await get(`business:${id}`)
+  return d ? JSON.parse(d) : null
 }
 
-export async function getBusiness(businessId: string): Promise<BusinessInfo | null> {
-  const data = await getKey(`business:${businessId}`);
-  return data ? JSON.parse(data) : null;
+export async function storeAnalysis(id: string, data: unknown): Promise<void> {
+  await set(`analysis:${id}`, JSON.stringify(data))
 }
 
-// Analysis operations
-export async function storeAnalysis(analysis: BusinessAnalysis): Promise<void> {
-  await setKey(`analysis:${analysis.business_id}`, JSON.stringify(analysis), 86400);
+export async function getAnalysis(id: string): Promise<unknown | null> {
+  const d = await get(`analysis:${id}`)
+  return d ? JSON.parse(d) : null
 }
 
-export async function getAnalysis(businessId: string): Promise<BusinessAnalysis | null> {
-  const data = await getKey(`analysis:${businessId}`);
-  return data ? JSON.parse(data) : null;
+export async function storeWorkflows(id: string, data: unknown): Promise<void> {
+  await set(`workflows:${id}`, JSON.stringify(data))
 }
 
-// Workflow operations
-export async function storeWorkflows(businessId: string, workflows: Workflow[]): Promise<void> {
-  await setKey(`workflows:${businessId}`, JSON.stringify(workflows), 86400);
-}
-
-export async function getWorkflows(businessId: string): Promise<Workflow[]> {
-  const data = await getKey(`workflows:${businessId}`);
-  return data ? JSON.parse(data) : [];
-}
-
-export async function updateWorkflowFeedback(
-  businessId: string,
-  workflowId: string,
-  action: 'thumbs_up' | 'thumbs_down' | 'edit',
-  editText?: string
-): Promise<Workflow | null> {
-  const workflows = await getWorkflows(businessId);
-  const idx = workflows.findIndex((w) => w.id === workflowId);
-  if (idx === -1) return null;
-
-  const workflow = workflows[idx];
-  if (!workflow.feedback) {
-    workflow.feedback = { thumbs_up: 0, thumbs_down: 0, edits: [] };
-  }
-
-  if (action === 'thumbs_up') workflow.feedback.thumbs_up++;
-  else if (action === 'thumbs_down') workflow.feedback.thumbs_down++;
-  else if (action === 'edit' && editText) workflow.feedback.edits.push(editText);
-
-  workflow.updated_at = new Date().toISOString();
-  workflows[idx] = workflow;
-  await storeWorkflows(businessId, workflows);
-  return workflow;
+export async function getWorkflows(id: string): Promise<unknown | null> {
+  const d = await get(`workflows:${id}`)
+  return d ? JSON.parse(d) : null
 }
