@@ -59,6 +59,7 @@ export default function DiscoverPage() {
   const [activeTab, setActiveTab] = useState<'reviews' | 'pain_points' | 'workflows'>('reviews');
   const [feedbackState, setFeedbackState] = useState<Record<string, string>>({});
   const [sessionReplayUrl, setSessionReplayUrl] = useState<string | null>(null);
+  const [liveViewUrl, setLiveViewUrl] = useState<string | null>(null);
 
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -81,6 +82,7 @@ export default function DiscoverPage() {
     setCompletedSteps([]);
     setCurrentStep('connecting');
     setSessionReplayUrl(null);
+    setLiveViewUrl(null);
 
     try {
       advanceStep('connecting');
@@ -124,6 +126,7 @@ export default function DiscoverPage() {
             case 'session':
               // Got Browserbase session URL — show live preview immediately!
               setSessionReplayUrl(data.sessionUrl);
+              if (data.liveViewUrl) setLiveViewUrl(data.liveViewUrl);
               advanceStep('scraping_reviews');
               break;
 
@@ -381,11 +384,11 @@ export default function DiscoverPage() {
               </div>
             </div>
             <div style={styles.browserContent}>
-              {sessionReplayUrl && isRunning ? (
+              {(liveViewUrl || sessionReplayUrl) && isRunning ? (
                 /* LIVE: Embed Browserbase session while agent is running */
                 <div style={{ width: '100%', height: '100%', position: 'relative' }}>
                   <iframe
-                    src={sessionReplayUrl}
+                    src={liveViewUrl || sessionReplayUrl || ''}
                     style={{
                       width: '100%',
                       height: '100%',

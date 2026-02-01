@@ -29,12 +29,36 @@ export async function POST(req: NextRequest) {
         const discovery = await discoverBusiness(mapsUrl)
         const { business, browserbaseSessionId, browserbaseSessionUrl } = discovery
 
-        // Send session URL immediately so frontend can embed it
-        if (browserbaseSessionUrl || browserbaseSessionId) {
-          send('session', {
-            sessionUrl: browserbaseSessionUrl || `https://www.browserbase.com/sessions/${browserbaseSessionId}`,
-            sessionId: browserbaseSessionId,
-          })
+        // Fetch the embeddable live view URL from Browserbase API
+        if (browserbaseSessionId && process.env.BROWSERBASE_API_KEY) {
+          try {
+            const liveRes = await fetch(
+              `https://api.browserbase.com/v1/sessions/${browserbaseSessionId}/debug`,
+              { headers: { 'x-bb-api-key': process.env.BROWSERBASE_API_KEY } }
+            )
+            if (liveRes.ok) {
+              const liveData = await liveRes.json()
+              const embedUrl = liveData.debuggerFullscreenUrl || liveData.debuggerUrl || browserbaseSessionUrl
+              send('session', {
+                sessionUrl: browserbaseSessionUrl || `https://www.browserbase.com/sessions/${browserbaseSessionId}`,
+                liveViewUrl: embedUrl,
+                sessionId: browserbaseSessionId,
+              })
+              console.log('[Stream] Live view URL:', embedUrl)
+            } else {
+              send('session', {
+                sessionUrl: browserbaseSessionUrl || `https://www.browserbase.com/sessions/${browserbaseSessionId}`,
+                sessionId: browserbaseSessionId,
+              })
+            }
+          } catch {
+            send('session', {
+              sessionUrl: browserbaseSessionUrl || `https://www.browserbase.com/sessions/${browserbaseSessionId}`,
+              sessionId: browserbaseSessionId,
+            })
+          }
+        } else if (browserbaseSessionUrl) {
+          send('session', { sessionUrl: browserbaseSessionUrl })
         }
 
         send('step', { step: 'extracting_info', message: 'Business info extracted' })
