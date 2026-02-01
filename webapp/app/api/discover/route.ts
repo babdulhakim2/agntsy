@@ -4,7 +4,8 @@ import { storeBusiness } from '@/lib/redis-client'
 
 export async function POST(req: NextRequest) {
   try {
-    const { mapsUrl } = await req.json()
+    const body = await req.json()
+    const mapsUrl = body.mapsUrl || body.maps_url
     if (!mapsUrl) {
       return NextResponse.json({ error: 'mapsUrl is required' }, { status: 400 })
     }

@@ -1,20 +1,5 @@
 // ─── Discovery Pipeline Types ───
 
-export interface BusinessInfo {
-  id: string
-  name: string
-  type: string
-  rating: number
-  reviewCount: number
-  address: string
-  phone?: string
-  website?: string
-  hours?: string
-  priceLevel?: string
-  mapsUrl: string
-  scrapedAt: string
-}
-
 export interface Review {
   author: string
   rating: number
@@ -23,12 +8,28 @@ export interface Review {
   sentiment?: 'positive' | 'negative' | 'neutral'
 }
 
+export interface BusinessInfo {
+  id: string
+  name: string
+  type: string
+  rating: number
+  review_count: number
+  address: string
+  phone?: string
+  website?: string
+  hours?: string
+  price_level?: string
+  maps_url: string
+  scraped_at: string
+  reviews: Review[]
+}
+
 export interface PainPoint {
   issue: string
   label: string
   frequency: number
-  severity: 'low' | 'medium' | 'high'
-  exampleQuotes: string[]
+  severity: 'low' | 'medium' | 'high' | 'critical'
+  example_quotes: string[]
 }
 
 export interface Strength {
@@ -36,22 +37,7 @@ export interface Strength {
   mentions: number
 }
 
-export type ToolType = 'browser' | 'voice' | 'tts' | 'image_model' | 'video' | 'sms' | 'email' | 'calendar'
-
-export interface Workflow {
-  id: string
-  name: string
-  description: string
-  trigger: string
-  toolsUsed: ToolType[]
-  userFacing: boolean
-  actions: string[]
-  evalMetrics: EvalMetric[]
-  painPointId: string
-  status: 'suggested' | 'active' | 'dismissed'
-  feedback?: 'good' | 'bad' | null
-  confidence: number
-}
+export type ToolType = 'browser' | 'voice' | 'tts' | 'image_model' | 'video' | 'sms' | 'email' | 'calendar' | 'llm' | 'camera'
 
 export interface EvalMetric {
   name: string
@@ -60,33 +46,52 @@ export interface EvalMetric {
   target?: number
 }
 
+export interface Workflow {
+  id: string
+  name: string
+  description: string
+  trigger: string
+  tools_used: ToolType[]
+  user_facing: boolean
+  actions: string[]
+  eval_metrics: EvalMetric[]
+  pain_point_id: string
+  status: 'suggested' | 'active' | 'dismissed'
+  confidence: number
+}
+
 export interface BusinessAnalysis {
-  businessId: string
-  businessType: string
-  painPoints: PainPoint[]
+  business_id: string
+  business_type: string
+  pain_points: PainPoint[]
   strengths: Strength[]
-  unansweredQuestions: string[]
-  workflows: Workflow[]
-  analyzedAt: string
+  unanswered_questions: string[]
+  suggested_workflows: Workflow[]
+  analyzed_at: string
 }
 
-export interface DiscoveryState {
-  step: 'idle' | 'opening' | 'scraping_info' | 'scraping_reviews' | 'scraping_website' | 'analyzing' | 'generating' | 'done' | 'error'
-  progress: number
-  message: string
-  business?: BusinessInfo
-  reviews?: Review[]
-  analysis?: BusinessAnalysis
-  error?: string
-}
+export type DiscoveryStep =
+  | 'idle'
+  | 'connecting'
+  | 'loading_maps'
+  | 'extracting_info'
+  | 'scraping_reviews'
+  | 'sorting_reviews'
+  | 'scraping_website'
+  | 'analyzing'
+  | 'generating_workflows'
+  | 'complete'
+  | 'error'
 
-export const TOOL_META: Record<ToolType, { icon: string; label: string; color: string }> = {
+export const TOOL_META: Record<string, { icon: string; label: string; color: string }> = {
   browser: { icon: '🌐', label: 'Browser', color: '#22D3EE' },
-  voice: { icon: '📞', label: 'Voice AI', color: '#60A5FA' },
+  voice: { icon: '🎙️', label: 'Voice AI', color: '#60A5FA' },
   tts: { icon: '🔊', label: 'Text-to-Speech', color: '#A78BFA' },
-  image_model: { icon: '📸', label: 'Vision AI', color: '#F472B6' },
+  image_model: { icon: '👁️', label: 'Vision AI', color: '#F472B6' },
   video: { icon: '🎥', label: 'Video AI', color: '#FB923C' },
-  sms: { icon: '💬', label: 'SMS', color: '#34D399' },
+  sms: { icon: '📱', label: 'SMS', color: '#34D399' },
   email: { icon: '📧', label: 'Email', color: '#FBBF24' },
   calendar: { icon: '📅', label: 'Calendar', color: '#6EE7B7' },
+  llm: { icon: '🧠', label: 'LLM', color: '#7C5CFC' },
+  camera: { icon: '📷', label: 'Camera', color: '#F97316' },
 }
