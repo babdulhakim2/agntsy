@@ -38,8 +38,10 @@ export default function LandingPage() {
   const chatMockRef = useRef<HTMLDivElement>(null)
   const faqRefs = useRef<(HTMLDivElement | null)[]>([])
 
-  const runAgent = useCallback(async () => {
-    if (!bizUrl.trim()) return
+  const runAgent = useCallback(async (overrideUrl?: string) => {
+    const targetUrl = (overrideUrl || bizUrl).trim()
+    if (!targetUrl) return
+    if (overrideUrl) setBizUrl(overrideUrl)
     setAgentRunning(true)
     setAgentStep(0)
 
@@ -51,7 +53,7 @@ export default function LandingPage() {
       const res = await fetch('/api/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: bizUrl.trim() }),
+        body: JSON.stringify({ url: targetUrl }),
       })
       const data = await res.json()
       if (data.profile) {
@@ -59,10 +61,13 @@ export default function LandingPage() {
         setAgentStep(AGENT_STEPS.length - 1)
         await new Promise(r => setTimeout(r, 800))
         window.location.href = '/home'
+        return // Don't clear running state — we're navigating away
       } else {
+        console.error('[Agent] No profile in response:', data)
         setAgentRunning(false)
       }
-    } catch {
+    } catch (err) {
+      console.error('[Agent] Failed:', err)
       setAgentRunning(false)
     } finally {
       clearInterval(stepTimer)
@@ -164,7 +169,7 @@ export default function LandingPage() {
                 style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 15, color: '#1A1A1A', padding: '10px 0' }}
               />
               <button
-                onClick={runAgent}
+                onClick={() => runAgent()}
                 disabled={!bizUrl.trim() || agentRunning}
                 style={{
                   padding: '12px 24px', borderRadius: 12, border: 'none', fontWeight: 600, fontSize: 14,
@@ -181,7 +186,7 @@ export default function LandingPage() {
                 <span style={{ fontSize: 13, color: '#8C8C8C' }}>or try:</span>
                 <button
                   onClick={() => {
-                    setBizUrl('https://maps.app.goo.gl/ENMScqeUcwbgxMGq7?g_st=ic')
+                    runAgent('https://maps.app.goo.gl/ENMScqeUcwbgxMGq7?g_st=ic')
                   }}
                   style={{
                     display: 'inline-flex', alignItems: 'center', gap: 8,
