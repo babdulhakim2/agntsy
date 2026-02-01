@@ -235,17 +235,37 @@ export default function DiscoverPage() {
           </button>
         </div>
 
-        {/* Quick demo link */}
+        {/* Quick demo presets */}
         {!isRunning && !business && (
-          <button
-            style={styles.demoLink}
-            onClick={() => {
-              setUrl('https://maps.google.com/maps?q=brewhaus+coffee+portland');
-              setTimeout(() => runDiscovery(), 100);
-            }}
-          >
-            Try with demo data →
-          </button>
+          <div style={styles.demoSection}>
+            <p style={styles.demoLabel}>Try it out:</p>
+            <div style={styles.demoButtons}>
+              <button
+                style={styles.demoButton}
+                onClick={() => {
+                  setUrl('https://maps.app.goo.gl/ENMScqeUcwbgxMGq7?g_st=ic');
+                }}
+              >
+                <span style={styles.demoEmoji}>🍜</span>
+                <span style={styles.demoText}>
+                  <span style={styles.demoBizName}>Sai&apos;s Vietnamese</span>
+                  <span style={styles.demoBizLocation}>San Francisco, CA</span>
+                </span>
+              </button>
+              <button
+                style={styles.demoButton}
+                onClick={() => {
+                  setUrl('https://maps.google.com/maps?q=brewhaus+coffee+portland');
+                }}
+              >
+                <span style={styles.demoEmoji}>☕</span>
+                <span style={styles.demoText}>
+                  <span style={styles.demoBizName}>Brewhaus Coffee</span>
+                  <span style={styles.demoBizLocation}>Portland, OR</span>
+                </span>
+              </button>
+            </div>
+          </div>
         )}
       </section>
 
@@ -894,15 +914,59 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '50%',
     animation: 'spin 0.6s linear infinite',
   },
-  demoLink: {
-    marginTop: 16,
-    background: 'none',
-    border: 'none',
-    color: '#7C5CFC',
-    fontSize: 14,
+  demoSection: {
+    marginTop: 24,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 10,
+    position: 'relative',
+    zIndex: 1,
+  },
+  demoLabel: {
+    fontSize: 13,
+    color: '#6B6B80',
+    margin: 0,
+    fontWeight: 500,
+    letterSpacing: '0.03em',
+    textTransform: 'uppercase',
+  },
+  demoButtons: {
+    display: 'flex',
+    gap: 10,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  demoButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: '10px 18px',
+    background: 'rgba(124, 92, 252, 0.06)',
+    border: '1px solid rgba(124, 92, 252, 0.2)',
+    borderRadius: 12,
     cursor: 'pointer',
     fontFamily: "'Inter', sans-serif",
-    opacity: 0.8,
+    transition: 'all 0.2s',
+    color: '#E8E8F0',
+  },
+  demoEmoji: {
+    fontSize: 24,
+  },
+  demoText: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 2,
+  },
+  demoBizName: {
+    fontSize: 14,
+    fontWeight: 600,
+    color: '#E8E8F0',
+  },
+  demoBizLocation: {
+    fontSize: 11,
+    color: '#6B6B80',
   },
 
   // Progress
