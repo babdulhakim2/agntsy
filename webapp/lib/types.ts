@@ -59,3 +59,101 @@ export interface Memory {
   source: string;
   sourceCount: number;
 }
+
+// ============================================================
+// Business Discovery + Workflow Generation Types
+// ============================================================
+
+export interface Review {
+  author: string;
+  rating: number;
+  date: string;
+  text: string;
+  sentiment?: 'positive' | 'negative' | 'neutral';
+  helpful_count?: number;
+}
+
+export interface BusinessInfo {
+  id: string;
+  name: string;
+  type: string;
+  rating: number;
+  review_count: number;
+  address: string;
+  phone?: string;
+  website?: string;
+  hours?: string[];
+  price_level?: string;
+  photos?: string[];
+  reviews: Review[];
+  scraped_services?: string[];
+  scraped_menu?: string[];
+  scraped_pricing?: { item: string; price: string }[];
+  screenshots?: string[];
+  discovered_at: string;
+  maps_url: string;
+}
+
+export interface PainPoint {
+  issue: string;
+  frequency: number;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  example_quotes: string[];
+  category?: string;
+}
+
+export interface EvalMetric {
+  name: string;
+  description: string;
+  target?: string;
+  measurement: string;
+}
+
+export interface Workflow {
+  id: string;
+  business_id: string;
+  name: string;
+  description: string;
+  trigger: string;
+  tools_used: string[];
+  user_facing: boolean;
+  actions: string[];
+  eval_metrics: EvalMetric[];
+  status: 'suggested' | 'active' | 'paused' | 'archived';
+  feedback?: {
+    thumbs_up: number;
+    thumbs_down: number;
+    edits: string[];
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BusinessAnalysis {
+  business_id: string;
+  business_type: string;
+  pain_points: PainPoint[];
+  strengths: string[];
+  unanswered_questions: string[];
+  suggested_workflows: Workflow[];
+  analyzed_at: string;
+}
+
+export type DiscoveryStep =
+  | 'idle'
+  | 'connecting'
+  | 'loading_maps'
+  | 'extracting_info'
+  | 'scraping_reviews'
+  | 'sorting_reviews'
+  | 'scraping_website'
+  | 'analyzing'
+  | 'generating_workflows'
+  | 'complete'
+  | 'error';
+
+export interface DiscoveryProgress {
+  step: DiscoveryStep;
+  message: string;
+  percent: number;
+}

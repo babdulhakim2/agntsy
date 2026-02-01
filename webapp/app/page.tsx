@@ -80,9 +80,12 @@ export default function LandingPage() {
           <a href="#" className={s.navLogo} onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
             Agentsy<span className={s.navLogoAccent}>.</span>
           </a>
-          <a href="/home" className={s.navCta}>
-            Get Started
-          </a>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <a href="/discover" style={{ fontSize: '0.85rem', fontWeight: 500, color: '#6B6560' }}>Demo</a>
+            <a href="/home" className={s.navCta}>
+              Get Started
+            </a>
+          </div>
         </div>
       </nav>
 
