@@ -217,14 +217,6 @@ export default function Page() {
 
       <BottomSheet memory={sheetMemory} onClose={() => setSheetMemory(null)} onDelete={deleteMemory} />
 
-      {showOnboarding && (
-        <OnboardingModal
-          onSubmit={runAgent}
-          onClose={() => { setShowOnboarding(false); localStorage.setItem('agentsy_business', '{}') }}
-        />
-      )}
-
-      {agentRunning && <AgentLoadingOverlay step={agentStep} />}
     </AppShell>
   )
 }

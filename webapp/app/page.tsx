@@ -18,13 +18,56 @@ const FAQ_DATA = [
   { q: 'When will Agentsy be available?', a: 'We\'re currently in private beta with a small group of creators. Join the waitlist and you\'ll be among the first to get access as we expand. Early waitlist members get priority access and a special founding member rate.' },
 ]
 
+const AGENT_STEPS = [
+  { msg: 'Launching browser agent...', icon: '🔌' },
+  { msg: 'Opening Google Maps...', icon: '🗺️' },
+  { msg: 'Scraping reviews...', icon: '⭐' },
+  { msg: 'Reading customer feedback...', icon: '📖' },
+  { msg: 'Generating improvement tasks...', icon: '🧠' },
+  { msg: 'Building eval harnesses...', icon: '📊' },
+]
+
 export default function LandingPage() {
   const [navScrolled, setNavScrolled] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [chatInView, setChatInView] = useState(false)
+  const [bizUrl, setBizUrl] = useState('')
+  const [agentRunning, setAgentRunning] = useState(false)
+  const [agentStep, setAgentStep] = useState(0)
 
   const chatMockRef = useRef<HTMLDivElement>(null)
   const faqRefs = useRef<(HTMLDivElement | null)[]>([])
+
+  const runAgent = useCallback(async () => {
+    if (!bizUrl.trim()) return
+    setAgentRunning(true)
+    setAgentStep(0)
+
+    const stepTimer = setInterval(() => {
+      setAgentStep(prev => prev < AGENT_STEPS.length - 1 ? prev + 1 : prev)
+    }, 8000)
+
+    try {
+      const res = await fetch('/api/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: bizUrl.trim() }),
+      })
+      const data = await res.json()
+      if (data.profile) {
+        localStorage.setItem('agentsy_business', JSON.stringify(data.profile))
+        setAgentStep(AGENT_STEPS.length - 1)
+        await new Promise(r => setTimeout(r, 800))
+        window.location.href = '/home'
+      } else {
+        setAgentRunning(false)
+      }
+    } catch {
+      setAgentRunning(false)
+    } finally {
+      clearInterval(stepTimer)
+    }
+  }, [bizUrl])
 
   // Scroll reveal observer
   useEffect(() => {
@@ -101,16 +144,37 @@ export default function LandingPage() {
           <h1 className={s.heroTitle}>
             <span className={`${s.heroWord} ${s.heroWord1}`}>Your </span>
             <span className={`${s.heroWord} ${s.heroWord2}`}>AI </span>
-            <span className={`${s.heroWord} ${s.heroWord3}`}>agent.</span>
+            <span className={`${s.heroWord} ${s.heroWord3}`}>agent</span>
             <span className={s.lineBreak} />
-            <span className={`${s.heroWord} ${s.heroWord5}`}>Your </span>
-            <span className={`${s.heroWord} ${s.heroWord6}`}><em className={s.heroEm}>rules</em>.</span>
+            <span className={`${s.heroWord} ${s.heroWord5}`}>for your </span>
+            <span className={`${s.heroWord} ${s.heroWord6}`}><em className={s.heroEm}>business</em>.</span>
           </h1>
           <p className={s.heroSub}>
-            A personal AI agent that lives in your WhatsApp. Research, write, plan, and manage — just text a message and let your agent handle the rest.
+            Paste your Google Maps link and our agent scrapes your reviews, finds what to improve, and builds a measurable action plan — powered by AI that learns.
           </p>
-          <div className={s.heroCta}>
-            <a href="/home" className={s.heroCtaButton}>Get Started →</a>
+          <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 20px' }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', background: '#FAF8F4', borderRadius: 16, padding: '6px 6px 6px 18px', border: '1.5px solid #E5E0D8', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+              <input
+                type="text"
+                placeholder="Paste your Google Maps URL..."
+                value={bizUrl}
+                onChange={e => setBizUrl(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && runAgent()}
+                disabled={agentRunning}
+                style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 15, color: '#1A1A1A', padding: '10px 0' }}
+              />
+              <button
+                onClick={runAgent}
+                disabled={!bizUrl.trim() || agentRunning}
+                style={{
+                  padding: '12px 24px', borderRadius: 12, border: 'none', fontWeight: 600, fontSize: 14,
+                  background: bizUrl.trim() && !agentRunning ? '#1A1A1A' : '#CCC', color: '#FFF',
+                  cursor: bizUrl.trim() && !agentRunning ? 'pointer' : 'default', whiteSpace: 'nowrap',
+                }}
+              >
+                {agentRunning ? 'Analyzing...' : 'Analyze →'}
+              </button>
+            </div>
           </div>
         </div>
         <div className={s.scrollHint}>
@@ -354,6 +418,32 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Agent Loading Overlay */}
+      {agentRunning && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }}>
+          <div style={{ background: '#FFFCF7', borderRadius: 20, padding: '36px 32px', maxWidth: 400, width: '90%', boxShadow: '0 24px 80px rgba(0,0,0,0.2)' }}>
+            <h2 style={{ fontFamily: 'serif', fontSize: 22, color: '#1A1A1A', marginBottom: 8 }}>Agent is analyzing your business</h2>
+            <p style={{ fontSize: 13, color: '#8C8C8C', marginBottom: 24 }}>This takes about 60 seconds. Hang tight.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {AGENT_STEPS.map((step, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, opacity: i <= agentStep ? 1 : 0.3, transition: 'opacity 0.4s' }}>
+                  <span style={{ fontSize: 18, width: 28, textAlign: 'center' }}>
+                    {i < agentStep ? '✅' : i === agentStep ? step.icon : '○'}
+                  </span>
+                  <span style={{ fontSize: 14, color: i <= agentStep ? '#1A1A1A' : '#BCBCBC', fontWeight: i === agentStep ? 600 : 400, flex: 1 }}>
+                    {step.msg}
+                  </span>
+                  {i === agentStep && (
+                    <span style={{ width: 16, height: 16, border: '2px solid #C5A44E', borderTopColor: 'transparent', borderRadius: '50%', animation: 'agentspin 0.8s linear infinite' }} />
+                  )}
+                </div>
+              ))}
+            </div>
+            <style>{`@keyframes agentspin { to { transform: rotate(360deg); } }`}</style>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
