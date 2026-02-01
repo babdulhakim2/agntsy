@@ -175,6 +175,31 @@ export default function LandingPage() {
                 {agentRunning ? 'Analyzing...' : 'Analyze →'}
               </button>
             </div>
+            {/* Demo preset */}
+            {!agentRunning && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14 }}>
+                <span style={{ fontSize: 13, color: '#8C8C8C' }}>or try:</span>
+                <button
+                  onClick={() => {
+                    setBizUrl('https://maps.app.goo.gl/ENMScqeUcwbgxMGq7?g_st=ic')
+                  }}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    padding: '8px 16px', borderRadius: 10,
+                    background: 'rgba(26, 26, 26, 0.04)',
+                    border: '1.5px solid #E5E0D8',
+                    cursor: 'pointer', transition: 'all 0.2s',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <span style={{ fontSize: 18 }}>🍜</span>
+                  <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#1A1A1A' }}>Sai&apos;s Vietnamese</span>
+                    <span style={{ fontSize: 11, color: '#8C8C8C' }}>San Francisco, CA</span>
+                  </span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
         <div className={s.scrollHint}>
