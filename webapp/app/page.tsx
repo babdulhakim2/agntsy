@@ -81,7 +81,7 @@ export default function LandingPage() {
             Agentsy<span className={s.navLogoAccent}>.</span>
           </a>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <a href="/discover" style={{ fontSize: '0.85rem', fontWeight: 500, color: '#6B6560' }}>Demo</a>
+            <a href="/discover" style={{ fontSize: '0.85rem', fontWeight: 500, color: '#7C5CFC' }}>Demo</a>
             <a href="/home" className={s.navCta}>
               Get Started
             </a>

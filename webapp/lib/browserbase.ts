@@ -25,7 +25,7 @@ async function discoverBusinessMock(mapsUrl: string): Promise<BusinessInfo> {
  */
 async function discoverBusinessReal(mapsUrl: string): Promise<BusinessInfo> {
   // @ts-ignore - may not be installed
-  const { Stagehand } = await import('@anthropic-ai/stagehand');
+  const { Stagehand } = await import('@browserbasehq/stagehand');
 
   const stagehand = new Stagehand({
     env: 'BROWSERBASE',
