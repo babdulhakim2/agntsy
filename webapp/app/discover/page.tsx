@@ -365,7 +365,7 @@ export default function DiscoverPage() {
             {/* Strengths */}
             <div style={styles.strengthsRow}>
               {analysis.strengths.slice(0, 4).map((s, i) => (
-                <span key={i} style={styles.strengthTag}>✨ {s}</span>
+                <span key={i} style={styles.strengthTag}>✨ {s.label}</span>
               ))}
             </div>
           </div>
