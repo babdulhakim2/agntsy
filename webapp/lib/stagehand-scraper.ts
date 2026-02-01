@@ -1,5 +1,4 @@
 import { Stagehand } from '@browserbasehq/stagehand'
-import { z } from 'zod'
 import type { BusinessInfo, Review } from './discover-types'
 
 function generateId(): string {
@@ -10,6 +9,20 @@ export interface ScrapeResult {
   business: BusinessInfo
   browserbaseSessionId?: string
   browserbaseSessionUrl?: string
+}
+
+/**
+ * Ensure the Maps URL has the !9m1!1b1 param that forces the reviews panel open.
+ */
+function ensureReviewsParam(url: string): string {
+  if (url.includes('!9m1!1b1')) return url
+  // If it has /data= section, append the reviews flag
+  if (url.includes('/data=')) {
+    return url.replace(/(\?entry=)/, '!9m1!1b1$1').replace(/(#|$)/, '!9m1!1b1$1')
+  }
+  // If no data section, add one
+  const sep = url.includes('?') ? '&' : '?'
+  return url
 }
 
 export async function scrapeWithStagehand(mapsUrl: string): Promise<ScrapeResult> {
@@ -31,7 +44,9 @@ export async function scrapeWithStagehand(mapsUrl: string): Promise<ScrapeResult
   const page = stagehand.context.pages()[0]
 
   try {
-    await page.goto(mapsUrl, { waitUntil: 'domcontentloaded', timeout: 45000 })
+    // Navigate — try to force reviews panel open
+    const targetUrl = ensureReviewsParam(mapsUrl)
+    await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 45000 })
     await page.waitForTimeout(12000)
 
     // Dismiss consent dialogs
@@ -54,16 +69,14 @@ export async function scrapeWithStagehand(mapsUrl: string): Promise<ScrapeResult
       } catch {}
     }
 
-    // ─── Extract business info via targeted DOM selectors ───
+    // ─── Extract business info ───
     const info = await page.evaluate(() => {
       const name = document.querySelector('h1')?.textContent?.trim() || ''
 
-      // Rating from aria-label
       const rLabel = document.querySelector('[role="img"][aria-label*="star"]')?.getAttribute('aria-label') || ''
       const rm = rLabel.match(/([\d.]+)/)
       const rating = rm ? parseFloat(rm[1]) : 0
 
-      // Review count — scan buttons/spans for "X reviews"
       let reviewCount = 0
       document.querySelectorAll('button,span,a').forEach(el => {
         const t = el.textContent || ''
@@ -71,7 +84,6 @@ export async function scrapeWithStagehand(mapsUrl: string): Promise<ScrapeResult
         if (m && !reviewCount) reviewCount = parseInt(m[1].replace(/,/g, ''))
       })
 
-      // Category/type
       let type = ''
       const typeBtn = document.querySelector('button[jsaction*="category"]')
       if (typeBtn) type = typeBtn.textContent?.trim() || ''
@@ -84,33 +96,27 @@ export async function scrapeWithStagehand(mapsUrl: string): Promise<ScrapeResult
         })
       }
 
-      // Address
       let address = ''
       const addrEl = document.querySelector('[data-item-id="address"] .Io6YTe') ||
         document.querySelector('button[data-item-id="address"]')
       if (addrEl) address = addrEl.textContent?.trim() || ''
 
-      // Phone
       let phone = ''
       const phoneEl = document.querySelector('[data-item-id*="phone"] .Io6YTe') ||
         document.querySelector('button[data-item-id*="phone"]')
       if (phoneEl) phone = phoneEl.textContent?.trim() || ''
 
-      // Website
       let website = ''
       const wEl = document.querySelector('a[data-item-id="authority"]')
       if (wEl) website = wEl.getAttribute('href') || ''
 
-      // Hours
       let hours = ''
       const hEl = document.querySelector('[aria-label*="Monday"]')
       if (hEl) {
         const full = hEl.getAttribute('aria-label') || ''
-        // Trim the long hours string
         hours = full.length > 200 ? full.slice(0, 200) + '...' : full
       }
 
-      // Price level
       let priceLevel = ''
       document.querySelectorAll('[aria-label*="Price"]').forEach(el => {
         priceLevel = el.textContent?.trim() || ''
@@ -119,44 +125,144 @@ export async function scrapeWithStagehand(mapsUrl: string): Promise<ScrapeResult
       return { name, rating, reviewCount, type, address, phone, website, hours, priceLevel }
     })
 
-    console.log(`[Stagehand] Extracted: "${info.name}" ${info.rating}★ (${info.reviewCount} reviews)`)
+    console.log(`[Stagehand] Business: "${info.name}" ${info.rating}★ (${info.reviewCount} reviews)`)
 
-    // ─── Extract visible review snippets from overview ───
-    let reviews: Review[] = []
-
+    // ─── Click Reviews tab if visible ───
     try {
-      // Try clicking the star rating area to open reviews panel
-      try {
-        const ratingEl = page.locator('[role="img"][aria-label*="star"]').first()
-        await ratingEl.click({ timeout: 5000 })
-        await page.waitForTimeout(5000)
-      } catch {}
-
-      // Extract any reviews visible on the page
-      const domReviews = await page.evaluate(() => {
-        const results: Array<{ author: string; rating: number; date: string; text: string }> = []
-        // Try standard review selectors
-        document.querySelectorAll('[data-review-id], .jftiEf').forEach(el => {
-          const author = el.querySelector('.d4r55')?.textContent?.trim() || ''
-          const rLabel = el.querySelector('[role="img"][aria-label*="star"]')?.getAttribute('aria-label') || ''
-          const rm = rLabel.match(/(\d)/)
-          const rating = rm ? parseInt(rm[1]) : 0
-          const date = el.querySelector('.rsqaWe')?.textContent?.trim() || ''
-          const text = el.querySelector('.wiI7pd')?.textContent?.trim() || ''
-          if (author && (text || rating)) results.push({ author, rating, date, text })
-        })
-        return results
+      await page.evaluate(() => {
+        const tabs = document.querySelectorAll('[role="tab"], button')
+        for (const tab of tabs) {
+          if (/^Reviews$/i.test((tab.textContent || '').trim())) {
+            (tab as HTMLElement).click()
+            return true
+          }
+        }
+        return false
       })
+      await page.waitForTimeout(4000)
+    } catch {}
 
-      reviews = domReviews.map(r => ({
-        ...r,
-        sentiment: r.rating >= 4 ? 'positive' as const
-          : r.rating <= 2 ? 'negative' as const
-          : 'neutral' as const,
-      }))
-      console.log(`[Stagehand] Reviews from DOM: ${reviews.length}`)
-    } catch (err) {
-      console.error('[Stagehand] Reviews failed:', err)
+    // ─── Scroll to load more reviews ───
+    for (let i = 0; i < 6; i++) {
+      await page.evaluate(() => {
+        // The scrollable reviews container
+        const scrollable = document.querySelector('.m6QErb.DxyBCb') ||
+          document.querySelector('.m6QErb.XiKgde') ||
+          document.querySelector('[tabindex="-1"].m6QErb')
+        if (scrollable) {
+          scrollable.scrollTop = scrollable.scrollHeight
+          return true
+        }
+        return false
+      })
+      await page.waitForTimeout(1500)
+    }
+
+    // ─── Expand truncated reviews ───
+    await page.evaluate(() => {
+      document.querySelectorAll('button.w8nwRe, button.M77dve').forEach(btn => {
+        (btn as HTMLElement).click()
+      })
+    })
+    await page.waitForTimeout(1000)
+
+    // ─── Extract reviews ───
+    const domReviews = await page.evaluate(() => {
+      const results: Array<{ author: string; rating: number; date: string; text: string }> = []
+      const seen = new Set<string>()
+      document.querySelectorAll('[data-review-id], .jftiEf').forEach(el => {
+        const author = el.querySelector('.d4r55')?.textContent?.trim() || ''
+        const rLabel = el.querySelector('[role="img"][aria-label*="star"]')?.getAttribute('aria-label') || ''
+        const rm = rLabel.match(/(\d)/)
+        const rating = rm ? parseInt(rm[1]) : 0
+        const date = el.querySelector('.rsqaWe')?.textContent?.trim() || ''
+        const text = el.querySelector('.wiI7pd')?.textContent?.trim() || ''
+        if (author && text) {
+          const key = `${author}|${text.slice(0, 50)}`
+          if (!seen.has(key)) {
+            seen.add(key)
+            results.push({ author, rating, date, text })
+          }
+        }
+      })
+      return results
+    })
+
+    const reviews: Review[] = domReviews.map(r => ({
+      ...r,
+      sentiment: r.rating >= 4 ? 'positive' as const
+        : r.rating <= 2 ? 'negative' as const
+        : 'neutral' as const,
+    }))
+
+    console.log(`[Stagehand] Reviews scraped: ${reviews.length}`)
+
+    // ─── If no reviews yet, try sorting by lowest to get critical ones ───
+    if (reviews.length > 0) {
+      try {
+        // Click sort
+        await page.evaluate(() => {
+          const sortBtn = document.querySelector('[aria-label*="Sort"], button[data-value="sort"]')
+          if (sortBtn) { (sortBtn as HTMLElement).click(); return }
+          document.querySelectorAll('button').forEach(b => {
+            if (/most relevant|sort/i.test(b.textContent || '')) (b as HTMLElement).click()
+          })
+        })
+        await page.waitForTimeout(2000)
+
+        // Click "Lowest rating"
+        await page.evaluate(() => {
+          document.querySelectorAll('[role="menuitemradio"], [data-index]').forEach(el => {
+            if (/lowest/i.test(el.textContent || '')) (el as HTMLElement).click()
+          })
+        })
+        await page.waitForTimeout(3000)
+
+        // Scroll
+        for (let i = 0; i < 4; i++) {
+          await page.evaluate(() => {
+            const s = document.querySelector('.m6QErb.DxyBCb') || document.querySelector('[tabindex="-1"].m6QErb')
+            if (s) s.scrollTop = s.scrollHeight
+          })
+          await page.waitForTimeout(1500)
+        }
+
+        // Expand
+        await page.evaluate(() => {
+          document.querySelectorAll('button.w8nwRe, button.M77dve').forEach(b => (b as HTMLElement).click())
+        })
+        await page.waitForTimeout(1000)
+
+        // Extract lowest
+        const lowestReviews = await page.evaluate(() => {
+          const results: Array<{ author: string; rating: number; date: string; text: string }> = []
+          document.querySelectorAll('[data-review-id], .jftiEf').forEach(el => {
+            const author = el.querySelector('.d4r55')?.textContent?.trim() || ''
+            const rLabel = el.querySelector('[role="img"][aria-label*="star"]')?.getAttribute('aria-label') || ''
+            const rm = rLabel.match(/(\d)/)
+            const rating = rm ? parseInt(rm[1]) : 0
+            const date = el.querySelector('.rsqaWe')?.textContent?.trim() || ''
+            const text = el.querySelector('.wiI7pd')?.textContent?.trim() || ''
+            if (author && text) results.push({ author, rating, date, text })
+          })
+          return results
+        })
+
+        const existingKeys = new Set(reviews.map(r => `${r.author}|${r.text.slice(0, 50)}`))
+        for (const r of lowestReviews) {
+          const key = `${r.author}|${r.text.slice(0, 50)}`
+          if (!existingKeys.has(key)) {
+            existingKeys.add(key)
+            reviews.push({
+              ...r,
+              sentiment: r.rating >= 4 ? 'positive' : r.rating <= 2 ? 'negative' : 'neutral',
+            })
+          }
+        }
+        console.log(`[Stagehand] Total after lowest sort: ${reviews.length}`)
+      } catch {
+        console.log('[Stagehand] Lowest sort skipped')
+      }
     }
 
     const business: BusinessInfo = {
@@ -175,7 +281,7 @@ export async function scrapeWithStagehand(mapsUrl: string): Promise<ScrapeResult
       reviews,
     }
 
-    console.log(`[Stagehand] Done: "${business.name}" — ${reviews.length} reviews scraped`)
+    console.log(`[Stagehand] Done: "${business.name}" — ${reviews.length} reviews`)
 
     return {
       business,
