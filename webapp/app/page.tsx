@@ -34,6 +34,7 @@ export default function LandingPage() {
   const [bizUrl, setBizUrl] = useState('')
   const [agentRunning, setAgentRunning] = useState(false)
   const [agentStep, setAgentStep] = useState(0)
+  const [sessionUrl, setSessionUrl] = useState<string | null>(null)
 
   const chatMockRef = useRef<HTMLDivElement>(null)
   const faqRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -44,6 +45,7 @@ export default function LandingPage() {
     if (overrideUrl) setBizUrl(overrideUrl)
     setAgentRunning(true)
     setAgentStep(0)
+    setSessionUrl(null)
 
     const stepTimer = setInterval(() => {
       setAgentStep(prev => prev < AGENT_STEPS.length - 1 ? prev + 1 : prev)
@@ -57,11 +59,15 @@ export default function LandingPage() {
       })
       const data = await res.json()
       if (data.profile) {
+        // Capture session URL for display
+        if (data.profile.browserbaseSessionUrl) {
+          setSessionUrl(data.profile.browserbaseSessionUrl)
+        }
         localStorage.setItem('agentsy_business', JSON.stringify(data.profile))
         setAgentStep(AGENT_STEPS.length - 1)
         await new Promise(r => setTimeout(r, 800))
         window.location.href = '/home'
-        return // Don't clear running state — we're navigating away
+        return
       } else {
         console.error('[Agent] No profile in response:', data)
         setAgentRunning(false)
@@ -451,26 +457,68 @@ export default function LandingPage() {
 
       {/* Agent Loading Overlay */}
       {agentRunning && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }}>
-          <div style={{ background: '#FFFCF7', borderRadius: 20, padding: '36px 32px', maxWidth: 400, width: '90%', boxShadow: '0 24px 80px rgba(0,0,0,0.2)' }}>
-            <h2 style={{ fontFamily: 'serif', fontSize: 22, color: '#1A1A1A', marginBottom: 8 }}>Agent is analyzing your business</h2>
-            <p style={{ fontSize: 13, color: '#8C8C8C', marginBottom: 24 }}>This takes about 60 seconds. Hang tight.</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {AGENT_STEPS.map((step, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, opacity: i <= agentStep ? 1 : 0.3, transition: 'opacity 0.4s' }}>
-                  <span style={{ fontSize: 18, width: 28, textAlign: 'center' }}>
-                    {i < agentStep ? '✅' : i === agentStep ? step.icon : '○'}
-                  </span>
-                  <span style={{ fontSize: 14, color: i <= agentStep ? '#1A1A1A' : '#BCBCBC', fontWeight: i === agentStep ? 600 : 400, flex: 1 }}>
-                    {step.msg}
-                  </span>
-                  {i === agentStep && (
-                    <span style={{ width: 16, height: 16, border: '2px solid #C5A44E', borderTopColor: 'transparent', borderRadius: '50%', animation: 'agentspin 0.8s linear infinite' }} />
-                  )}
-                </div>
-              ))}
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)' }}>
+          <div style={{ background: '#FFFCF7', borderRadius: 20, padding: '32px 28px', maxWidth: 680, width: '94%', boxShadow: '0 24px 80px rgba(0,0,0,0.25)', display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+            {/* Left: Steps */}
+            <div style={{ flex: '1 1 240px', minWidth: 240 }}>
+              <h2 style={{ fontFamily: 'serif', fontSize: 20, color: '#1A1A1A', marginBottom: 6 }}>Agent is analyzing your business</h2>
+              <p style={{ fontSize: 12, color: '#8C8C8C', marginBottom: 20 }}>Powered by Browserbase + GPT-4o. ~60 seconds.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {AGENT_STEPS.map((step, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, opacity: i <= agentStep ? 1 : 0.3, transition: 'opacity 0.4s' }}>
+                    <span style={{ fontSize: 16, width: 24, textAlign: 'center' }}>
+                      {i < agentStep ? '✅' : i === agentStep ? step.icon : '○'}
+                    </span>
+                    <span style={{ fontSize: 13, color: i <= agentStep ? '#1A1A1A' : '#BCBCBC', fontWeight: i === agentStep ? 600 : 400, flex: 1 }}>
+                      {step.msg}
+                    </span>
+                    {i === agentStep && (
+                      <span style={{ width: 14, height: 14, border: '2px solid #C5A44E', borderTopColor: 'transparent', borderRadius: '50%', animation: 'agentspin 0.8s linear infinite' }} />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-            <style>{`@keyframes agentspin { to { transform: rotate(360deg); } }`}</style>
+            {/* Right: Browser Preview */}
+            <div style={{ flex: '1 1 300px', minWidth: 280, borderRadius: 12, overflow: 'hidden', border: '1.5px solid #E5E0D8', background: '#1A1A1A' }}>
+              {/* Browser toolbar */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: '#2A2A2A', borderBottom: '1px solid #3A3A3A' }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#F87171' }} />
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FBBF24' }} />
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#34D399' }} />
+                <span style={{ flex: 1, fontSize: 10, color: '#6B6B80', fontFamily: 'monospace', marginLeft: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {sessionUrl ? '🔴 Live — Browserbase Session' : bizUrl || 'maps.google.com'}
+                </span>
+              </div>
+              {/* Browser content */}
+              <div style={{ height: 220, position: 'relative', overflow: 'hidden' }}>
+                {sessionUrl ? (
+                  <iframe
+                    src={sessionUrl}
+                    style={{ width: '100%', height: '100%', border: 'none', background: '#0A0A12' }}
+                    allow="autoplay"
+                    sandbox="allow-scripts allow-same-origin allow-popups"
+                  />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                    {/* Animated scan line */}
+                    <div style={{
+                      position: 'absolute', left: 0, right: 0, height: 2,
+                      background: 'linear-gradient(90deg, transparent, rgba(124,92,252,0.4), transparent)',
+                      animation: 'agentscan 2s linear infinite',
+                    }} />
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 32, marginBottom: 8, animation: 'agentspin 3s linear infinite' }}>🌐</div>
+                      <div style={{ fontSize: 12, color: '#6B6B80' }}>Browser agent launching...</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <style>{`
+              @keyframes agentspin { to { transform: rotate(360deg); } }
+              @keyframes agentscan { 0% { top: 0; } 100% { top: 100%; } }
+            `}</style>
           </div>
         </div>
       )}

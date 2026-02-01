@@ -83,67 +83,100 @@ export default function DiscoverPage() {
     setSessionReplayUrl(null);
 
     try {
-      // Simulate step progression
-      const stepDelay = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
       advanceStep('connecting');
-      await stepDelay(800);
 
-      advanceStep('loading_maps');
-      await stepDelay(1000);
-
-      advanceStep('extracting_info');
-      await stepDelay(600);
-
-      // Phase 1: Discover
-      advanceStep('scraping_reviews');
-      const discoverRes = await fetch('/api/discover', {
+      // Use streaming endpoint — get session URL early for live browser preview
+      const res = await fetch('/api/discover/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ maps_url: url }),
       });
 
-      if (!discoverRes.ok) {
-        throw new Error('Discovery failed');
+      if (!res.ok || !res.body) throw new Error('Discovery failed');
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let finalData: any = null;
+
+      // Simulate early steps while waiting for first event
+      advanceStep('loading_maps');
+      const earlyStepTimer = setTimeout(() => advanceStep('extracting_info'), 2000);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+
+        for (const block of lines) {
+          const eventMatch = block.match(/^event: (\w+)/m);
+          const dataMatch = block.match(/^data: (.+)/m);
+          if (!eventMatch || !dataMatch) continue;
+
+          const event = eventMatch[1];
+          let data;
+          try { data = JSON.parse(dataMatch[1]); } catch { continue; }
+
+          switch (event) {
+            case 'session':
+              // Got Browserbase session URL — show live preview immediately!
+              setSessionReplayUrl(data.sessionUrl);
+              advanceStep('scraping_reviews');
+              break;
+
+            case 'business':
+              advanceStep('sorting_reviews');
+              setBusiness((prev: any) => prev || {
+                ...data,
+                id: 'streaming',
+                reviews: [],
+                maps_url: url,
+                scraped_at: new Date().toISOString(),
+              });
+              advanceStep('scraping_website');
+              break;
+
+            case 'step':
+              if (data.step === 'analyzing') advanceStep('analyzing');
+              if (data.step === 'complete') {
+                advanceStep('generating_workflows');
+              }
+              break;
+
+            case 'complete':
+              clearTimeout(earlyStepTimer);
+              if (data.business) setBusiness(data.business);
+              if (data.analysis) setAnalysis(data.analysis);
+              if (data.browserbaseSessionUrl) setSessionReplayUrl(data.browserbaseSessionUrl);
+              advanceStep('complete');
+              setCompletedSteps((prev) => [...prev, 'complete']);
+              finalData = data;
+              break;
+
+            case 'error':
+              throw new Error(data.message || 'Pipeline failed');
+          }
+        }
       }
 
-      const discoverData = await discoverRes.json();
-      const biz = discoverData.business;
-      setBusiness(biz);
-
-      // Capture Browserbase session replay URL
-      if (discoverData.browserbaseSessionUrl) {
-        setSessionReplayUrl(discoverData.browserbaseSessionUrl);
-      } else if (discoverData.browserbaseSessionId) {
-        setSessionReplayUrl(`https://www.browserbase.com/sessions/${discoverData.browserbaseSessionId}`);
+      // If we got business but no analysis (stream ended without it), fetch analysis separately
+      if (finalData?.business && !finalData?.analysis) {
+        advanceStep('analyzing');
+        const analyzeRes = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ business_id: finalData.business.id, business_data: finalData.business }),
+        });
+        if (analyzeRes.ok) {
+          const { analysis: anal } = await analyzeRes.json();
+          setAnalysis(anal);
+        }
+        advanceStep('complete');
+        setCompletedSteps((prev) => [...prev, 'complete']);
       }
-
-      advanceStep('sorting_reviews');
-      await stepDelay(800);
-
-      advanceStep('scraping_website');
-      await stepDelay(1000);
-
-      // Phase 2: Analyze
-      advanceStep('analyzing');
-      const analyzeRes = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ business_id: biz.id, business_data: biz }),
-      });
-
-      if (!analyzeRes.ok) {
-        throw new Error('Analysis failed');
-      }
-
-      const { analysis: anal } = await analyzeRes.json();
-
-      advanceStep('generating_workflows');
-      await stepDelay(1200);
-
-      setAnalysis(anal);
-      advanceStep('complete');
-      setCompletedSteps((prev) => [...prev, 'complete']);
 
       // Scroll to results
       setTimeout(() => {
@@ -348,7 +381,42 @@ export default function DiscoverPage() {
               </div>
             </div>
             <div style={styles.browserContent}>
-              {sessionReplayUrl ? (
+              {sessionReplayUrl && isRunning ? (
+                /* LIVE: Embed Browserbase session while agent is running */
+                <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                  <iframe
+                    src={sessionReplayUrl}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      border: 'none',
+                      borderRadius: '0 0 12px 12px',
+                      background: '#0A0A12',
+                    }}
+                    allow="autoplay"
+                    sandbox="allow-scripts allow-same-origin allow-popups"
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 8,
+                    left: 8,
+                    right: 8,
+                    padding: '6px 12px',
+                    background: 'rgba(10, 10, 15, 0.85)',
+                    backdropFilter: 'blur(8px)',
+                    borderRadius: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    border: '1px solid rgba(124, 92, 252, 0.3)',
+                  }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#34D399', animation: 'pulse 2s ease-in-out infinite' }} />
+                    <span style={{ color: '#E8E8F0', fontSize: 12, fontWeight: 500 }}>Live — Browserbase Agent Session</span>
+                    <a href={sessionReplayUrl} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', color: '#7C5CFC', fontSize: 11, textDecoration: 'none' }}>Open ↗</a>
+                  </div>
+                </div>
+              ) : sessionReplayUrl ? (
+                /* DONE: Show session replay link */
                 <a
                   href={sessionReplayUrl}
                   target="_blank"
@@ -364,44 +432,14 @@ export default function DiscoverPage() {
                     background: 'linear-gradient(135deg, #0A0A12 0%, #1A1A2E 100%)',
                     borderRadius: '0 0 12px 12px',
                     cursor: 'pointer',
-                    transition: 'all 0.3s ease',
                   }}
                 >
-                  <div style={{
-                    fontSize: 56,
-                    marginBottom: 16,
-                    filter: 'drop-shadow(0 0 20px rgba(124, 92, 252, 0.4))',
-                  }}>
-                    🎬
-                  </div>
-                  <div style={{
-                    color: '#E8E8F0',
-                    fontSize: 16,
-                    fontWeight: 600,
-                    marginBottom: 6,
-                  }}>
-                    Watch Session Replay
-                  </div>
-                  <div style={{
-                    color: '#7C5CFC',
-                    fontSize: 13,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                  }}>
-                    View the agent&apos;s browser session on Browserbase ↗
-                  </div>
+                  <div style={{ fontSize: 56, marginBottom: 16, filter: 'drop-shadow(0 0 20px rgba(124, 92, 252, 0.4))' }}>🎬</div>
+                  <div style={{ color: '#E8E8F0', fontSize: 16, fontWeight: 600, marginBottom: 6 }}>Watch Session Replay</div>
+                  <div style={{ color: '#7C5CFC', fontSize: 13 }}>View the agent&apos;s browser session on Browserbase ↗</div>
                   {business && (
-                    <div style={{
-                      marginTop: 16,
-                      padding: '8px 16px',
-                      background: 'rgba(124, 92, 252, 0.15)',
-                      borderRadius: 8,
-                      border: '1px solid rgba(124, 92, 252, 0.3)',
-                    }}>
-                      <span style={{ color: '#E8E8F0', fontSize: 13 }}>
-                        🏪 {business.name} · {'⭐'.repeat(Math.round(business.rating))} {business.rating}
-                      </span>
+                    <div style={{ marginTop: 16, padding: '8px 16px', background: 'rgba(124, 92, 252, 0.15)', borderRadius: 8, border: '1px solid rgba(124, 92, 252, 0.3)' }}>
+                      <span style={{ color: '#E8E8F0', fontSize: 13 }}>🏪 {business.name} · {'⭐'.repeat(Math.round(business.rating))} {business.rating}</span>
                     </div>
                   )}
                 </a>
@@ -409,16 +447,12 @@ export default function DiscoverPage() {
                 <div style={styles.browserResult}>
                   <div style={{ fontSize: 48, marginBottom: 12 }}>🏪</div>
                   <h3 style={{ color: '#E8E8F0', margin: '0 0 4px' }}>{business.name}</h3>
-                  <p style={{ color: '#6B6B80', margin: 0 }}>
-                    {'⭐'.repeat(Math.round(business.rating))} {business.rating} · {business.review_count} reviews
-                  </p>
+                  <p style={{ color: '#6B6B80', margin: 0 }}>{'⭐'.repeat(Math.round(business.rating))} {business.rating} · {business.review_count} reviews</p>
                 </div>
               ) : (
                 <div style={styles.browserLoading}>
                   <div style={styles.scanline} />
-                  <p style={{ color: '#6B6B80', margin: 0 }}>
-                    {isRunning ? 'Agent browser active...' : 'Waiting for discovery...'}
-                  </p>
+                  <p style={{ color: '#6B6B80', margin: 0 }}>{isRunning ? 'Agent browser active...' : 'Waiting for discovery...'}</p>
                 </div>
               )}
             </div>
