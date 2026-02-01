@@ -13,7 +13,12 @@ export async function POST(req: NextRequest) {
     const result = await discoverBusiness(mapsUrl)
     await storeBusiness(result.business.id, result)
 
-    return NextResponse.json({ success: true, ...result })
+    return NextResponse.json({
+      success: true,
+      business: result.business,
+      browserbaseSessionId: result.browserbaseSessionId,
+      browserbaseSessionUrl: result.browserbaseSessionUrl,
+    })
   } catch (error) {
     console.error('Discovery error:', error)
     return NextResponse.json({ error: 'Discovery failed' }, { status: 500 })

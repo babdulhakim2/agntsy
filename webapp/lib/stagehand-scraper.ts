@@ -6,7 +6,13 @@ function generateId(): string {
   return 'biz_' + Math.random().toString(36).substring(2, 15)
 }
 
-export async function scrapeWithStagehand(mapsUrl: string): Promise<{ business: BusinessInfo }> {
+export interface ScrapeResult {
+  business: BusinessInfo
+  browserbaseSessionId?: string
+  browserbaseSessionUrl?: string
+}
+
+export async function scrapeWithStagehand(mapsUrl: string): Promise<ScrapeResult> {
   const stagehand = new Stagehand({
     env: 'BROWSERBASE',
     apiKey: process.env.BROWSERBASE_API_KEY!,
@@ -141,7 +147,14 @@ export async function scrapeWithStagehand(mapsUrl: string): Promise<{ business: 
       reviews,
     }
 
-    return { business }
+    const sessionId = stagehand.browserbaseSessionId
+    const sessionUrl = stagehand.browserbaseSessionURL
+
+    return {
+      business,
+      browserbaseSessionId: sessionId,
+      browserbaseSessionUrl: sessionUrl,
+    }
   } finally {
     await stagehand.close()
   }

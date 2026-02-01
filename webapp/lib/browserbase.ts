@@ -5,11 +5,17 @@ function generateId(): string {
   return 'biz_' + Math.random().toString(36).substring(2, 15)
 }
 
+export interface DiscoverResult {
+  business: BusinessInfo
+  browserbaseSessionId?: string
+  browserbaseSessionUrl?: string
+}
+
 /**
  * Discover a business from a Google Maps URL.
  * Priority: Browserbase/Stagehand → Apify → Mock data
  */
-export async function discoverBusiness(mapsUrl: string): Promise<{ business: BusinessInfo }> {
+export async function discoverBusiness(mapsUrl: string): Promise<DiscoverResult> {
   // Try Browserbase/Stagehand if keys are set
   if (process.env.BROWSERBASE_API_KEY && process.env.BROWSERBASE_PROJECT_ID) {
     try {
@@ -26,7 +32,8 @@ export async function discoverBusiness(mapsUrl: string): Promise<{ business: Bus
     try {
       const { scrapeGoogleMaps } = await import('./apify-scraper')
       console.log('[Discovery] Using Apify')
-      return await scrapeGoogleMaps(mapsUrl)
+      const result = await scrapeGoogleMaps(mapsUrl)
+      return result
     } catch (err) {
       console.error('[Discovery] Apify failed:', err)
     }

@@ -58,6 +58,7 @@ export default function DiscoverPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'reviews' | 'pain_points' | 'workflows'>('reviews');
   const [feedbackState, setFeedbackState] = useState<Record<string, string>>({});
+  const [sessionReplayUrl, setSessionReplayUrl] = useState<string | null>(null);
 
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -79,6 +80,7 @@ export default function DiscoverPage() {
     setAnalysis(null);
     setCompletedSteps([]);
     setCurrentStep('connecting');
+    setSessionReplayUrl(null);
 
     try {
       // Simulate step progression
@@ -105,8 +107,16 @@ export default function DiscoverPage() {
         throw new Error('Discovery failed');
       }
 
-      const { business: biz } = await discoverRes.json();
+      const discoverData = await discoverRes.json();
+      const biz = discoverData.business;
       setBusiness(biz);
+
+      // Capture Browserbase session replay URL
+      if (discoverData.browserbaseSessionUrl) {
+        setSessionReplayUrl(discoverData.browserbaseSessionUrl);
+      } else if (discoverData.browserbaseSessionId) {
+        setSessionReplayUrl(`https://www.browserbase.com/sessions/${discoverData.browserbaseSessionId}`);
+      }
 
       advanceStep('sorting_reviews');
       await stepDelay(800);
@@ -294,7 +304,7 @@ export default function DiscoverPage() {
             </div>
           </div>
 
-          {/* Browser View Placeholder */}
+          {/* Browser View — Session Replay */}
           <div style={styles.browserFrame}>
             <div style={styles.browserToolbar}>
               <div style={styles.browserDots}>
@@ -303,11 +313,79 @@ export default function DiscoverPage() {
                 <span style={{ ...styles.dot, background: '#34D399' }} />
               </div>
               <div style={styles.browserUrl}>
-                {url || 'https://maps.google.com/...'}
+                {sessionReplayUrl ? (
+                  <a
+                    href={sessionReplayUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#7C5CFC', textDecoration: 'none', fontSize: 12 }}
+                  >
+                    🎬 Session Replay ↗
+                  </a>
+                ) : (
+                  url || 'https://maps.google.com/...'
+                )}
               </div>
             </div>
             <div style={styles.browserContent}>
-              {currentStep === 'complete' && business ? (
+              {sessionReplayUrl ? (
+                <a
+                  href={sessionReplayUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '100%',
+                    height: '100%',
+                    textDecoration: 'none',
+                    background: 'linear-gradient(135deg, #0A0A12 0%, #1A1A2E 100%)',
+                    borderRadius: '0 0 12px 12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  <div style={{
+                    fontSize: 56,
+                    marginBottom: 16,
+                    filter: 'drop-shadow(0 0 20px rgba(124, 92, 252, 0.4))',
+                  }}>
+                    🎬
+                  </div>
+                  <div style={{
+                    color: '#E8E8F0',
+                    fontSize: 16,
+                    fontWeight: 600,
+                    marginBottom: 6,
+                  }}>
+                    Watch Session Replay
+                  </div>
+                  <div style={{
+                    color: '#7C5CFC',
+                    fontSize: 13,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}>
+                    View the agent&apos;s browser session on Browserbase ↗
+                  </div>
+                  {business && (
+                    <div style={{
+                      marginTop: 16,
+                      padding: '8px 16px',
+                      background: 'rgba(124, 92, 252, 0.15)',
+                      borderRadius: 8,
+                      border: '1px solid rgba(124, 92, 252, 0.3)',
+                    }}>
+                      <span style={{ color: '#E8E8F0', fontSize: 13 }}>
+                        🏪 {business.name} · {'⭐'.repeat(Math.round(business.rating))} {business.rating}
+                      </span>
+                    </div>
+                  )}
+                </a>
+              ) : currentStep === 'complete' && business ? (
                 <div style={styles.browserResult}>
                   <div style={{ fontSize: 48, marginBottom: 12 }}>🏪</div>
                   <h3 style={{ color: '#E8E8F0', margin: '0 0 4px' }}>{business.name}</h3>
