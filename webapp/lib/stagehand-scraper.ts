@@ -20,7 +20,18 @@ export async function scrapeWithStagehand(mapsUrl: string): Promise<{ business: 
   try {
     // Navigate to Google Maps URL
     await page.goto(mapsUrl, { waitUntil: 'domcontentloaded', timeout: 30000 })
-    await page.waitForTimeout(5000)
+    await page.waitForTimeout(8000)
+
+    // If it's a search results page, click the first result
+    const title = await page.title()
+    if (!title.includes(' - Google Maps') || title === 'Google Maps') {
+      try {
+        await stagehand.act('Click on the first business result in the list on the left side')
+        await page.waitForTimeout(5000)
+      } catch {
+        // Already on a place page
+      }
+    }
 
     // Extract business info
     const info = await stagehand.extract(
