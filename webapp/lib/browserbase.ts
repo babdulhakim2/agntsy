@@ -7,20 +7,33 @@ function generateId(): string {
 
 /**
  * Discover a business from a Google Maps URL.
- * Priority: Apify (APIFY_API_TOKEN) → Mock data
+ * Priority: Browserbase/Stagehand → Apify → Mock data
  */
 export async function discoverBusiness(mapsUrl: string): Promise<{ business: BusinessInfo }> {
+  // Try Browserbase/Stagehand if keys are set
+  if (process.env.BROWSERBASE_API_KEY && process.env.BROWSERBASE_PROJECT_ID) {
+    try {
+      const { scrapeWithStagehand } = await import('./stagehand-scraper')
+      console.log('[Discovery] Using Browserbase/Stagehand')
+      return await scrapeWithStagehand(mapsUrl)
+    } catch (err) {
+      console.error('[Discovery] Stagehand failed:', err)
+    }
+  }
+
   // Try Apify if token is set
   if (process.env.APIFY_API_TOKEN) {
     try {
       const { scrapeGoogleMaps } = await import('./apify-scraper')
+      console.log('[Discovery] Using Apify')
       return await scrapeGoogleMaps(mapsUrl)
     } catch (err) {
-      console.error('Apify scrape failed, falling back to mock:', err)
+      console.error('[Discovery] Apify failed:', err)
     }
   }
 
   // Mock fallback
+  console.log('[Discovery] Using mock data')
   await new Promise(r => setTimeout(r, 500))
   return {
     business: {

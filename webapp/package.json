@@ -8,6 +8,7 @@
     "start": "next start -p 3004 -H 0.0.0.0"
   },
   "dependencies": {
+    "@browserbasehq/stagehand": "^3.0.8",
     "@gsap/react": "^2.1.2",
     "apify-client": "^2.22.0",
     "clsx": "^2.1.1",
@@ -16,7 +17,8 @@
     "next": "^16.1.6",
     "playwright": "^1.58.1",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.9.0",
