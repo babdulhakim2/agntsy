@@ -1,7 +1,9 @@
 import OpenAI from 'openai'
 import type { BusinessInfo, BusinessAnalysis, PainPoint, Strength, Workflow, ToolType, EvalMetric } from './discover-types'
+import { initWeave, getTracedOpenAI, traceOp } from './weave-client'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+// Will be replaced with traced client on first call
+let openai: any = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 const ANALYSIS_PROMPT = `You are a business operations analyst specializing in AI workflow automation for small/medium businesses.
 
@@ -40,7 +42,14 @@ IMPORTANT: Make workflows creative, specific to the business type, and actionabl
 
 Return ONLY valid JSON matching this schema. No markdown, no explanation.`
 
-export async function analyzeBusinessReviews(business: BusinessInfo): Promise<BusinessAnalysis> {
+// Eagerly init Weave on module load
+const _weaveReady = initWeave().catch(() => {})
+
+async function _analyzeBusinessReviews(business: BusinessInfo): Promise<BusinessAnalysis> {
+  // Ensure Weave is ready + use traced OpenAI client
+  await _weaveReady
+  try { openai = getTracedOpenAI() } catch {}
+
   const hasReviews = business.reviews && business.reviews.length > 0
   const reviewsText = hasReviews
     ? business.reviews.map(r => `[${r.rating}★ - ${r.author}, ${r.date}]: "${r.text}"`).join('\n')
@@ -119,3 +128,6 @@ Analyze this business and generate AI workflow recommendations that would help t
     analyzed_at: new Date().toISOString(),
   }
 }
+
+// Export as Weave-traced op
+export const analyzeBusinessReviews = traceOp(_analyzeBusinessReviews, 'analyzeBusinessReviews')

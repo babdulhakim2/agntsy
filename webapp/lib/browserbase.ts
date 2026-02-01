@@ -14,6 +14,7 @@ export interface DiscoverResult {
 /**
  * Discover a business from a Google Maps URL.
  * Priority: Browserbase/Stagehand → Apify → Mock data
+ * If Browserbase gets business info but 0 reviews, supplements with mock reviews.
  */
 export async function discoverBusiness(mapsUrl: string): Promise<DiscoverResult> {
   // Try Browserbase/Stagehand if keys are set
@@ -21,7 +22,16 @@ export async function discoverBusiness(mapsUrl: string): Promise<DiscoverResult>
     try {
       const { scrapeWithStagehand } = await import('./stagehand-scraper')
       console.log('[Discovery] Using Browserbase/Stagehand')
-      return await scrapeWithStagehand(mapsUrl)
+      const result = await scrapeWithStagehand(mapsUrl)
+
+      // If Browserbase got business info but 0 reviews, supplement with mock reviews
+      if (result.business && result.business.reviews.length === 0) {
+        console.log('[Discovery] Browserbase got 0 reviews — supplementing with mock reviews for demo')
+        result.business.reviews = MOCK_BUSINESS.reviews
+        result.business.review_count = result.business.review_count || MOCK_BUSINESS.reviews.length
+      }
+
+      return result
     } catch (err: any) {
       console.error('[Discovery] Stagehand failed:', err?.message || err)
       // Even on failure, if we got a session URL, pass it through with mock data

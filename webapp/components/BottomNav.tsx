@@ -5,9 +5,10 @@ import { cn } from '@/lib/utils'
 interface BottomNavProps {
   tab: 'home' | 'memories'
   onTabChange: (tab: 'home' | 'memories') => void
+  businessName?: string
 }
 
-export function BottomNav({ tab, onTabChange }: BottomNavProps) {
+export function BottomNav({ tab, onTabChange, businessName }: BottomNavProps) {
   return (
     <div className="h-16 flex border-t border-border shrink-0 safe-bottom bg-surface relative z-50">
       {/* Indicator */}
@@ -29,7 +30,11 @@ export function BottomNav({ tab, onTabChange }: BottomNavProps) {
         <svg className="w-[22px] h-[22px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
         </svg>
-        Home
+        {businessName ? (
+          <span className="truncate max-w-[80px]" title={businessName}>{businessName}</span>
+        ) : (
+          'Home'
+        )}
       </button>
 
       <button

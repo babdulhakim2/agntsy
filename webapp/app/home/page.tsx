@@ -8,6 +8,8 @@ import { HomeView } from '@/components/HomeView'
 import { MemoriesView } from '@/components/MemoriesView'
 import { ChatOverlay } from '@/components/ChatOverlay'
 import { BottomSheet } from '@/components/BottomSheet'
+import { BusinessProfileView } from '@/components/BusinessProfileView'
+import type { BusinessProfile } from '@/lib/task-engine'
 
 const AGENT_STEPS = [
   { msg: 'Launching browser agent...', icon: '🔌' },
@@ -102,17 +104,44 @@ export default function Page() {
   const [threads, setThreads] = useState<Thread[]>(THREADS)
   const [memories, setMemories] = useState<Memory[]>(MEMORIES)
 
+  // Business profile state
+  const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null)
+
   // Onboarding + agent state
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [agentStep, setAgentStep] = useState(-1)
   const [agentRunning, setAgentRunning] = useState(false)
 
+  // Load business profile from localStorage on mount
   useEffect(() => {
-    // Show onboarding on first visit
-    if (typeof window !== 'undefined' && !localStorage.getItem('agentsy_business')) {
-      const timer = setTimeout(() => setShowOnboarding(true), 600)
-      return () => clearTimeout(timer)
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('agentsy_business')
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored)
+          // Validate it has the expected shape
+          if (parsed && parsed.business && parsed.business.name) {
+            setBusinessProfile(parsed)
+          } else {
+            localStorage.removeItem('agentsy_business')
+          }
+        } catch {
+          localStorage.removeItem('agentsy_business')
+        }
+      }
+
+      // Show onboarding only if no business profile
+      if (!stored) {
+        const timer = setTimeout(() => setShowOnboarding(true), 600)
+        return () => clearTimeout(timer)
+      }
     }
+  }, [])
+
+  const resetProfile = useCallback(() => {
+    localStorage.removeItem('agentsy_business')
+    setBusinessProfile(null)
+    setShowOnboarding(true)
   }, [])
 
   const runAgent = useCallback(async (url: string) => {
@@ -137,6 +166,7 @@ export default function Page() {
       const data = await res.json()
       if (data.profile) {
         localStorage.setItem('agentsy_business', JSON.stringify(data.profile))
+        setBusinessProfile(data.profile)
         // Jump to final step
         setAgentStep(AGENT_STEPS.length - 1)
         await new Promise(r => setTimeout(r, 1000))
@@ -149,6 +179,7 @@ export default function Page() {
       setAgentStep(-1)
     }
   }, [])
+
   const [chatOpen, setChatOpen] = useState(false)
   const [activeThread, setActiveThread] = useState<Thread | null>(null)
   const [initialPrompt, setInitialPrompt] = useState<string | null>(null)
@@ -198,14 +229,34 @@ export default function Page() {
         }}
       >
         <div className="w-1/2 h-full flex flex-col overflow-hidden">
-          <HomeView threads={threads} onNewChat={openNewChat} onOpenThread={openThread} />
+          {businessProfile ? (
+            <BusinessProfileView
+              profile={businessProfile}
+              onReset={resetProfile}
+              onNewChat={openNewChat}
+            />
+          ) : (
+            <HomeView threads={threads} onNewChat={openNewChat} onOpenThread={openThread} />
+          )}
         </div>
         <div className="w-1/2 h-full flex flex-col overflow-hidden">
           <MemoriesView memories={memories} onOpenMemory={setSheetMemory} />
         </div>
       </div>
 
-      <BottomNav tab={tab} onTabChange={setTab} />
+      <BottomNav
+        tab={tab}
+        onTabChange={setTab}
+        businessName={businessProfile?.business?.name}
+      />
+
+      {/* Onboarding modal */}
+      {showOnboarding && !agentRunning && !businessProfile && (
+        <OnboardingModal onSubmit={runAgent} onClose={() => setShowOnboarding(false)} />
+      )}
+
+      {/* Agent loading */}
+      {agentRunning && <AgentLoadingOverlay step={agentStep} />}
 
       <ChatOverlay
         open={chatOpen}

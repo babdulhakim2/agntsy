@@ -1,8 +1,8 @@
 import OpenAI from 'openai'
-import { initWeave, traceOp } from './weave-client'
+import { initWeave, getTracedOpenAI, traceOp } from './weave-client'
 import type { BusinessInfo } from './discover-types'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+let openai: any = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 export interface TaskEval {
   metric: string
@@ -69,6 +69,8 @@ Be specific. Reference actual reviews. Don't be generic. Every task should be so
 Return ONLY valid JSON.`
 
 async function generateTasksRaw(business: BusinessInfo): Promise<any> {
+  // Use Weave-traced OpenAI client
+  try { openai = getTracedOpenAI() } catch {}
   const reviewsText = business.reviews
     .map(r => `[${r.rating}★ ${r.author}, ${r.date}]: "${r.text}"`)
     .join('\n')
